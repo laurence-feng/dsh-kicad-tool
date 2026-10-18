@@ -16,7 +16,7 @@ function check(label, ok, detail) {
 
 let route
 const webServer = {
-  origin: 'http://127.0.0.1:65535',
+  getOrigin: () => 'http://127.0.0.1:65535',
   register(spec) {
     route = spec
     return () => {}

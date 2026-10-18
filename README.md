@@ -24,6 +24,13 @@ uv pip install --python ~/.kicad-tools/.venv/bin/python -e ~/.kicad-tools
 `kicad-cli` is optional: `kct` ships a pure-Python DRC, and `kicad_status` reports whether
 `kicad-cli` is on `PATH`.
 
+For the visual preview, a local [KiCanvas](https://github.com/theacodes/kicanvas) build:
+
+```bash
+git clone https://github.com/theacodes/kicanvas ~/.kicanvas
+cd ~/.kicanvas && npm ci && npm run build     # → build/kicanvas.js (≈470 KB, self-contained)
+```
+
 ## Install
 
 Link this package into a Harness profile:
@@ -44,6 +51,7 @@ clone's absolute path.
 | `kicad_summary` | JSON summary of one `.kicad_pcb` (layers, footprints, nets, traces) or `.kicad_sch` (symbols, nets). |
 | `kicad_query` | Read-only queries: `sch.*`, `pcb.*`, `symbols`, `nets`, `bom`, `check`, `drc`, `erc.parse`, … with `--format json` by default. Narrow at the source with `filter` (native `--filter`, on `sch.labels`, `sch.unconnected`, `sch.connections`, `pcb.footprints`, `pcb.nets`, `symbols`) or cap a JSON array with `limit`. |
 | `kicad_run` | Full `kct` argv pass-through (no shell) for everything else — routing, fixing, netlists, renders, exports. Design-writing commands are refused unless enabled. |
+| `kicad_preview` | Returns a browser URL that renders a KiCad file with KiCanvas: interactive schematic/PCB viewer with zoom, pan, layers and symbol details. |
 
 Examples the model can issue:
 
@@ -58,6 +66,21 @@ Examples the model can issue:
 // kicad_run
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
 ```
+
+## Preview routes
+
+`kicad_preview` returns a URL on the harness web server (loopback only). The routes it serves:
+
+| Route | Purpose |
+|---|---|
+| `/plugin/kicanvas/view?file=<abs>&controls=full\|basic\|none` | viewer page embedding `<kicanvas-embed>` |
+| `/plugin/kicanvas/file?file=<abs>` | the KiCad file itself, served as `text/plain` |
+| `/plugin/kicanvas/kicanvas.js` | the local KiCanvas bundle |
+| `/plugin/kicanvas/status` | JSON: is the bundle built, and where |
+
+Only KiCad extensions are ever served (`.kicad_pcb`, `.kicad_sch`, `.kicad_sym`, `.kicad_wks`,
+`.kicad_pro`, `.kicad_prj`, `.kicad_dru`), files are capped at 64 MB, and every request must come
+from a loopback `Host` — the routes cannot be used as a general-purpose file reader.
 
 ## Dynamic loading of the toolchain
 
@@ -84,6 +107,7 @@ Set these in the profile's `cordis.patch.yml` row (`- id: dsh-kicad-tool`):
 | `timeoutMs` | `120000` | per-invocation wall clock limit |
 | `maxOutputChars` | `100000` | per-stream output cap before truncation (JSON past the cap is not parsed) |
 | `allowMutating` | `false` | enable commands that write to KiCad files |
+| `kicanvasDir` | `~/.kicanvas` | KiCanvas checkout whose `build/kicanvas.js` backs `kicad_preview` |
 
 ```yaml
 - id: dsh-kicad-tool

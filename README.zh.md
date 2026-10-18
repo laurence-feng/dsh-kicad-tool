@@ -21,6 +21,13 @@ uv pip install --python ~/.kicad-tools/.venv/bin/python -e ~/.kicad-tools
 
 `kicad-cli` 是可选的：`kct` 自带纯 Python 的 DRC，`kicad_status` 会报告 `kicad-cli` 是否在 `PATH` 上。
 
+想用可视化预览，还需要本地构建一份 [KiCanvas](https://github.com/theacodes/kicanvas)：
+
+```bash
+git clone https://github.com/theacodes/kicanvas ~/.kicanvas
+cd ~/.kicanvas && npm ci && npm run build     # → build/kicanvas.js（约 470 KB，自包含）
+```
+
 ## 安装
 
 把包链接进 Harness profile：
@@ -40,6 +47,7 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 | `kicad_summary` | 单个 `.kicad_pcb`（层、封装、网络、走线）或 `.kicad_sch`（符号、网络）的 JSON 摘要。 |
 | `kicad_query` | 只读查询：`sch.*`、`pcb.*`、`symbols`、`nets`、`bom`、`check`、`drc`、`erc.parse` 等，默认 `--format json`。用 `filter` 在源头收窄（走原生 `--filter`，仅 `sch.labels`、`sch.unconnected`、`sch.connections`、`pcb.footprints`、`pcb.nets`、`symbols`），用 `limit` 截断 JSON 数组。 |
 | `kicad_run` | 完整的 `kct` argv 透传（不经 shell），覆盖布线、修复、网表、渲染、导出等其余命令；写文件的命令默认拒绝。 |
+| `kicad_preview` | 返回一个浏览器 URL，用 KiCanvas 渲染 KiCad 文件：可缩放、平移、看层和符号属性的交互式查看器。 |
 
 调用示例：
 
@@ -54,6 +62,20 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 // kicad_run
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
 ```
+
+## 预览路由
+
+`kicad_preview` 返回 Harness web server 上的 URL（仅回环地址）。后端路由：
+
+| 路由 | 用途 |
+|---|---|
+| `/plugin/kicanvas/view?file=<绝对路径>&controls=full\|basic\|none` | 内嵌 `<kicanvas-embed>` 的查看页 |
+| `/plugin/kicanvas/file?file=<绝对路径>` | KiCad 文件本身，按 `text/plain` 返回 |
+| `/plugin/kicanvas/kicanvas.js` | 本地构建的 KiCanvas 包 |
+| `/plugin/kicanvas/status` | JSON：包是否已构建、路径在哪 |
+
+只提供 KiCad 扩展名（`.kicad_pcb`、`.kicad_sch`、`.kicad_sym`、`.kicad_wks`、`.kicad_pro`、
+`.kicad_prj`、`.kicad_dru`），单文件上限 64 MB，且请求必须来自回环 `Host`——这些路由不能当通用文件读取器用。
 
 ## 工具链的动态加载
 
@@ -79,6 +101,7 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 | `timeoutMs` | `120000` | 单次调用墙钟上限 |
 | `maxOutputChars` | `100000` | 单流输出截断阈值（超出部分不解析为 JSON） |
 | `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
+| `kicanvasDir` | `~/.kicanvas` | KiCanvas 检出目录，`kicad_preview` 用它的 `build/kicanvas.js` |
 
 ```yaml
 - id: dsh-kicad-tool

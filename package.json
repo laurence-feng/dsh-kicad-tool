@@ -1,6 +1,6 @@
 {
   "name": "dsh-kicad-tool",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "KiCad tooling for DeepSeek Harness: exposes the kct CLI (kicad-tools) as agent tools for schematic/PCB inspection, DRC/ERC, BOM and authoring workflows.",
   "license": "MIT",
   "type": "module",
@@ -23,6 +23,7 @@
   "files": [
     "lib/**",
     "client.js",
+    "assets/**",
     "locale/**",
     "icon.svg",
     "cordis.patch.yml",
@@ -36,7 +37,8 @@
     "test:contract": "node test/contract.mjs",
     "test:preview": "node test/preview.mjs",
     "test:events": "node test/events.mjs",
-    "test:settings": "node test/settings.mjs"
+    "test:settings": "node test/settings.mjs",
+    "vendor:kicanvas": "node scripts/vendor-kicanvas.mjs"
   },
   "engines": {
     "node": ">=18"

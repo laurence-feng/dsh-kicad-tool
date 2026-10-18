@@ -86,9 +86,8 @@ check(
   initial.json.config.kicadToolsDir.endsWith('/.local/share/dsh-kicad-tool/kicad-tools'),
   initial.json.config.kicadToolsDir,
 )
-check('both repositories are reported', Object.keys(initial.json.repos).length === 2)
-check('nothing is installed yet', initial.json.repos['kicad-tools'].installed === false)
-check('missing npm is reported', initial.json.dependencies.npm === null, String(initial.json.dependencies.npm))
+check('only kicad-tools is managed (KiCanvas is vendored)', Object.keys(initial.json.repos).join(',') === 'kicad-tools', Object.keys(initial.json.repos).join(','))
+check('missing uv is reported', initial.json.dependencies.uv === null, String(initial.json.dependencies.uv))
 check(
   'uninstall command is provided',
   typeof initial.json.uninstallCommand === 'string' && initial.json.uninstallCommand.includes('remove dsh-kicad-tool'),
@@ -100,13 +99,14 @@ const relative = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsD
 check('relative paths are rejected', relative.status === 400, relative.text)
 
 const kctDir = join(home, 'kicad-tools')
-const canvasDir = join(home, 'kicanvas')
-const saved = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsDir: kctDir, kicanvasDir: canvasDir })
+const saved = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsDir: kctDir })
 check('paths save', saved.status === 200, saved.text)
 check('settings file written', existsSync(join(home, 'kicad-tool.json')))
 const stored = JSON.parse(readFileSync(join(home, 'kicad-tool.json'), 'utf8'))
-check('stored paths match', stored.kicadToolsDir === kctDir && stored.kicanvasDir === canvasDir, JSON.stringify(stored))
-check('state reflects the new path', saved.json.config.kicanvasDir === canvasDir)
+check('stored paths match', stored.kicadToolsDir === kctDir, JSON.stringify(stored))
+check('state reflects the new path', saved.json.config.kicadToolsDir === kctDir)
+check('no kicanvas path is exposed', !('kicanvasDir' in saved.json.config))
+check('the fresh path is not installed', saved.json.repos['kicad-tools'].installed === false, JSON.stringify(saved.json.repos['kicad-tools']))
 
 const mutating = await request('PUT', '/plugin/kicad-tool/config', { allowMutating: true })
 check('allowMutating persists', mutating.json.config.allowMutating === true)
@@ -116,30 +116,33 @@ check('allowMutating persists', mutating.json.config.allowMutating === true)
 const badTarget = await request('POST', '/plugin/kicad-tool/action', { target: 'nope', action: 'install' })
 check('unknown target is refused', badTarget.status === 409, badTarget.text)
 
-const missingDeps = await request('POST', '/plugin/kicad-tool/action', { target: 'kicanvas', action: 'install' })
+const missingDeps = await request('POST', '/plugin/kicad-tool/action', { target: 'kicad-tools', action: 'install' })
 check(
   'install reports the missing command with a hint',
-  missingDeps.status === 409 && /missing command\(s\): npm/.test(missingDeps.text) && /brew install node/.test(missingDeps.text),
+  missingDeps.status === 409 && /missing command\(s\): uv/.test(missingDeps.text) && /brew install uv/.test(missingDeps.text),
   missingDeps.text,
 )
 
 const updateMissing = await request('POST', '/plugin/kicad-tool/action', { target: 'kicad-tools', action: 'update' })
 check('update requires an install', updateMissing.status === 409 && /not installed/.test(updateMissing.text), updateMissing.text)
 
+const canvasTarget = await request('POST', '/plugin/kicad-tool/action', { target: 'kicanvas', action: 'install' })
+check('kicanvas is no longer a managed target', canvasTarget.status === 409, canvasTarget.text)
+
 /* ---------- purge safety ---------- */
 
 // A directory at the configured path that is NOT the expected repository must survive.
-mkdirSync(canvasDir, { recursive: true })
-writeFileSync(join(canvasDir, 'package.json'), '{"name":"something-else"}')
+mkdirSync(kctDir, { recursive: true })
+writeFileSync(join(kctDir, 'pyproject.toml'), 'name = "something-else"')
 const purged = await request('POST', '/plugin/kicad-tool/purge')
 check('purge answers', purged.status === 200, purged.text)
-check('purge leaves foreign directories alone', purged.json.removed.length === 0 && existsSync(join(canvasDir, 'package.json')), JSON.stringify(purged.json))
+check('purge leaves foreign directories alone', purged.json.removed.length === 0 && existsSync(join(kctDir, 'pyproject.toml')), JSON.stringify(purged.json))
 
 // A directory that does look like the repository is removed.
-writeFileSync(join(canvasDir, 'package.json'), '{"name": "kicanvas"}')
+writeFileSync(join(kctDir, 'pyproject.toml'), 'name = "kicad-tools"')
 const removed = await request('POST', '/plugin/kicad-tool/purge')
-check('purge removes the managed checkout', removed.json.removed.includes(canvasDir), JSON.stringify(removed.json))
-check('purge deletes it from disk', !existsSync(canvasDir))
+check('purge removes the managed checkout', removed.json.removed.includes(kctDir), JSON.stringify(removed.json))
+check('purge deletes it from disk', !existsSync(kctDir))
 
 /* ---------- routes wait for the webServer service ---------- */
 

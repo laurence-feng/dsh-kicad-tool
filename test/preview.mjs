@@ -47,7 +47,7 @@ apply(
     workingDirectory: { ensure: async () => process.cwd() },
     effect: (factory) => factory(),
   },
-  { kicanvasDir: `${process.env.HOME}/.kicanvas` },
+  {},
 )
 
 check('kicad_preview tool registered', tools.has('kicad_preview'))
@@ -64,6 +64,7 @@ check('preview URL ends in the real file name', decodeURIComponent(new URL(previ
 const status = await get(origin, '/status')
 check('status answers JSON', status.status === 200 && JSON.parse(status.body).ok === true, status.body.slice(0, 120))
 check('status reports the bundle', JSON.parse(status.body).bundle === true, JSON.parse(status.body).bundlePath)
+check('the bundle is the vendored one', JSON.parse(status.body).vendored === true && JSON.parse(status.body).bundlePath.endsWith('/assets/kicanvas.js'), JSON.parse(status.body).bundlePath)
 
 const bundle = await get(origin, '/kicanvas.js')
 check('bundle is served as JavaScript', bundle.status === 200 && bundle.headers['content-type'].includes('javascript') && bundle.body.length > 10000, `${bundle.status} / ${bundle.body.length} bytes`)

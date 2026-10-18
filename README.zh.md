@@ -10,10 +10,11 @@
 ## 依赖
 
 - Node.js ≥ 18（Harness 宿主）。
-- `git`；Python 侧需要 `uv`，查看器构建需要 `npm`。两个命令都会实时检测并显示在设置页上，
-  缺失时直接报错并给安装命令，不会卡住。
+- `git` 与 `uv`（Python 侧）。两者都会实时检测并显示在设置页上，缺失时直接报错并给安装命令，
+  不会卡住。
 
-不需要手工 clone：插件的设置页负责安装与构建两个检出。
+查看器是**内置**的：`assets/kicanvas.js`（468 KB，MIT）随插件发布，离线可用、不需要构建步骤。
+运行时只需要安装 Python 工具链。
 
 ## 安装
 
@@ -21,16 +22,22 @@
 dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
-然后打开 **设置 → KiCad 工具**，分别点 `kicad-tools` 和 `KiCanvas` 的 **安装**。默认根目录：
+然后打开 **设置 → KiCad 工具**，点一次 **安装**。默认根目录：
 
 ```text
 ~/.local/share/dsh-kicad-tool/kicad-tools   git 检出 + .venv（kct 命令行）
-~/.local/share/dsh-kicad-tool/kicanvas      git 检出 + build/kicanvas.js（查看器）
 ```
 
-两条路径都能在页面里改，立即生效、不用重启。页面还提供每个仓库的 **更新 / 重新安装 / 删除**、
-依赖检测（`git`、`uv`、`npm`）、最近操作日志，以及 **删除数据并卸载**——它删掉两个检出并给出
+路径可在页面里改，立即生效、不用重启。页面还提供 **更新 / 重新安装 / 删除**、依赖检测
+（`git`、`uv`，以及「KiCanvas 内置」）、最近操作日志，以及 **删除数据并卸载**——它删掉检出并给出
 准确的 `dsh plugin ... remove` 命令（宿主无法卸载自己的包）。
+
+KiCanvas 不由页面管理，升级等于发一次插件版本。要按钉住的 commit 重建内置包：
+
+```bash
+npm run vendor:kicanvas                     # 用 assets/KICANVAS-VERSION 里的 commit
+npm run vendor:kicanvas -- <commit>         # 换一个 commit 试
+```
 
 ## 工具
 
@@ -111,7 +118,6 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 | `timeoutMs` | `120000` | 单次调用墙钟上限 |
 | `maxOutputChars` | `100000` | 单流输出截断阈值（超出部分不解析为 JSON） |
 | `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
-| `kicanvasDir` | `~/.local/share/dsh-kicad-tool/kicanvas` | KiCanvas 检出目录（设置页） |
 
 ```yaml
 - id: dsh-kicad-tool

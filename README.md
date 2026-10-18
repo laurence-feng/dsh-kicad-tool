@@ -11,11 +11,11 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 ## Requirements
 
 - Node.js ≥ 18 (the Harness host).
-- `git`, plus `uv` for the Python CLI and `npm` for the viewer build. Both are checked live and
-  reported on the settings page; a missing command fails the action with an install hint instead
-  of hanging.
+- `git` and `uv` for the Python CLI. Both are checked live and reported on the settings page; a
+  missing command fails the action with an install hint instead of hanging.
 
-Nothing has to be cloned by hand: the plugin's settings page installs and builds both checkouts.
+The viewer is **vendored**: `assets/kicanvas.js` (468 KB, MIT) ships inside the plugin, so previews
+work offline with no build step. Only the Python toolchain is installed at runtime.
 
 ## Install
 
@@ -23,18 +23,24 @@ Nothing has to be cloned by hand: the plugin's settings page installs and builds
 dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
-Then open **Settings → KiCad 工具** and press **安装** for `kicad-tools` and for `KiCanvas`. The default
-roots are:
+Then open **Settings → KiCad 工具** and press **安装** once. The default root is:
 
 ```text
 ~/.local/share/dsh-kicad-tool/kicad-tools   git checkout + .venv (kct CLI)
-~/.local/share/dsh-kicad-tool/kicanvas      git checkout + build/kicanvas.js (viewer)
 ```
 
-Both paths are editable in the page and apply immediately (no restart). The page also offers
-**更新 / 重新安装 / 删除** per repository, a dependency readout (`git`, `uv`, `npm`), the last
-operation log, and **删除数据并卸载** — which deletes both checkouts and prints the exact
+The path is editable in the page and applies immediately (no restart). The page also offers
+**更新 / 重新安装 / 删除**, a dependency readout (`git`, `uv`, plus "KiCanvas 内置"), the last
+operation log, and **删除数据并卸载** — which deletes the checkout and prints the exact
 `dsh plugin ... remove` command (the Host cannot uninstall its own package).
+
+KiCanvas is not managed by the page; upgrading it is a plugin release. To rebuild the vendored
+bundle from a pinned upstream commit:
+
+```bash
+npm run vendor:kicanvas                     # uses assets/KICANVAS-VERSION's pin
+npm run vendor:kicanvas -- <commit>         # try another commit
+```
 
 ## Tools
 
@@ -122,7 +128,6 @@ profile's `cordis.patch.yml` row act as composition-time defaults only:
 | `timeoutMs` | `120000` | per-invocation wall clock limit |
 | `maxOutputChars` | `100000` | per-stream output cap before truncation (JSON past the cap is not parsed) |
 | `allowMutating` | `false` | enable commands that write to KiCad files |
-| `kicanvasDir` | `~/.local/share/dsh-kicad-tool/kicanvas` | KiCanvas checkout (Settings page) |
 
 ```yaml
 - id: dsh-kicad-tool

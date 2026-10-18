@@ -38,7 +38,7 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 |---|---|
 | `kicad_status` | 解析 `kct`，报告路径/版本、安装根目录、`kicad-cli` 是否存在、是否允许写设计文件，以及**当前进程实际加载的插件版本**。 |
 | `kicad_summary` | 单个 `.kicad_pcb`（层、封装、网络、走线）或 `.kicad_sch`（符号、网络）的 JSON 摘要。 |
-| `kicad_query` | 只读查询：`sch.summary`、`sch.symbols`、`sch.nets`、`sch.validate`、`pcb.summary`、`pcb.footprints`、`pcb.nets`、`pcb.traces`、`bom`、`check`、`drc`、`erc.parse` 等，默认 `--format json`，可透传额外 flag。 |
+| `kicad_query` | 只读查询：`sch.*`、`pcb.*`、`symbols`、`nets`、`bom`、`check`、`drc`、`erc.parse` 等，默认 `--format json`。用 `filter` 在源头收窄（走原生 `--filter`，仅 `sch.labels`、`sch.unconnected`、`sch.connections`、`pcb.footprints`、`pcb.nets`、`symbols`），用 `limit` 截断 JSON 数组。 |
 | `kicad_run` | 完整的 `kct` argv 透传（不经 shell），覆盖布线、修复、网表、渲染、导出等其余命令；写文件的命令默认拒绝。 |
 
 调用示例：
@@ -47,8 +47,9 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 // kicad_summary
 { "path": "boards/00-simple-led/output/simple_led.kicad_pcb" }
 
-// kicad_query
-{ "command": "pcb.nets", "path": "board.kicad_pcb", "flags": ["--filter", "VCC*"] }
+// kicad_query —— 原生 filter，以及客户端上限
+{ "command": "pcb.nets", "path": "board.kicad_pcb", "filter": "VCC*" }
+{ "command": "symbols", "path": "board.kicad_sch", "limit": 50 }
 
 // kicad_run
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }

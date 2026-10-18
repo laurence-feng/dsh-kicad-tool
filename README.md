@@ -42,7 +42,7 @@ clone's absolute path.
 |---|---|
 | `kicad_status` | Resolve `kct`, report its path/version, the install root, `kicad-cli` presence, whether design writes are enabled, and which plugin version the running process actually loaded. |
 | `kicad_summary` | JSON summary of one `.kicad_pcb` (layers, footprints, nets, traces) or `.kicad_sch` (symbols, nets). |
-| `kicad_query` | Read-only queries: `sch.summary`, `sch.symbols`, `sch.nets`, `sch.validate`, `pcb.summary`, `pcb.footprints`, `pcb.nets`, `pcb.traces`, `bom`, `check`, `drc`, `erc.parse`, … with `--format json` by default and extra flags passable. |
+| `kicad_query` | Read-only queries: `sch.*`, `pcb.*`, `symbols`, `nets`, `bom`, `check`, `drc`, `erc.parse`, … with `--format json` by default. Narrow at the source with `filter` (native `--filter`, on `sch.labels`, `sch.unconnected`, `sch.connections`, `pcb.footprints`, `pcb.nets`, `symbols`) or cap a JSON array with `limit`. |
 | `kicad_run` | Full `kct` argv pass-through (no shell) for everything else — routing, fixing, netlists, renders, exports. Design-writing commands are refused unless enabled. |
 
 Examples the model can issue:
@@ -51,8 +51,9 @@ Examples the model can issue:
 // kicad_summary
 { "path": "boards/00-simple-led/output/simple_led.kicad_pcb" }
 
-// kicad_query
-{ "command": "pcb.nets", "path": "board.kicad_pcb", "flags": ["--filter", "VCC*"] }
+// kicad_query — native filter, and a client-side cap
+{ "command": "pcb.nets", "path": "board.kicad_pcb", "filter": "VCC*" }
+{ "command": "symbols", "path": "board.kicad_sch", "limit": 50 }
 
 // kicad_run
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }

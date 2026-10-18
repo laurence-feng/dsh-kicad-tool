@@ -150,8 +150,11 @@ const bigSchematic = '/Users/laurence/Datas/Workdesk/SRFLab/ezIOC_Board/ezIOC_Bo
 if (existsSync(bigSchematic)) {
   cases.push({ tool: 'kicad_query', args: { command: 'sch.labels', path: bigSchematic, format: 'json' }, expectExit: 0 })
   cases.push({ tool: 'kicad_query', args: { command: 'bom', path: bigSchematic }, expectExit: 0 })
+  cases.push({ tool: 'kicad_query', args: { command: 'symbols', path: bigSchematic, limit: 5 }, expectExit: 0 })
 }
-cases.push({ tool: 'kicad_query', args: { command: 'pcb.nets', path: board, flags: ['--filter', 'VCC*'] }, expectExit: 0 })
+cases.push({ tool: 'kicad_query', args: { command: 'pcb.nets', path: board, filter: '*' }, expectExit: 0 })
+cases.push({ tool: 'kicad_query', args: { command: 'symbols', path: schematic, filter: 'R*' }, expectExit: 0 })
+cases.push({ tool: 'kicad_query', args: { command: 'symbols', path: schematic, limit: 1 }, expectExit: 0 })
 
 let ran = 0
 for (const testCase of cases) {
@@ -177,6 +180,15 @@ for (const testCase of cases) {
   }
 }
 
+/* ---------- item cap semantics ---------- */
+
+const capped = await tools.get('kicad_query').execute({ command: 'symbols', path: schematic, limit: 1 }, exec)
+check('limit caps the array', Array.isArray(capped.data) && capped.data.length === 1)
+check('limit reports itemCount/itemsShown', Number.isInteger(capped.itemCount) && capped.itemsShown === 1 && capped.itemCount >= 1)
+check('limit renders the cap note', tools.get('kicad_query').output.render({}, capped)[0].text.includes('showed 1 of'))
+const uncapped = await tools.get('kicad_query').execute({ command: 'symbols', path: schematic }, exec)
+check('no limit leaves itemCount unset', !('itemCount' in uncapped))
+
 /* ---------- guards ---------- */
 
 async function expectThrow(label, promise) {
@@ -192,6 +204,7 @@ async function expectThrow(label, promise) {
 await expectThrow('mutating command is blocked', tools.get('kicad_run').execute({ args: ['pcb', 'remove-footprint', board] }, exec))
 await expectThrow('unknown query command is rejected', tools.get('kicad_query').execute({ command: 'nope', path: board }, exec))
 await expectThrow('malformed flag is rejected', tools.get('kicad_query').execute({ command: 'pcb.nets', path: board, flags: ['--filter; rm -rf /'] }, exec))
+await expectThrow('filter on an unsupported command is rejected', tools.get('kicad_query').execute({ command: 'nets', path: schematic, filter: 'VCC' }, exec))
 await expectThrow('summary rejects other extensions', tools.get('kicad_summary').execute({ path: 'notes.txt' }, exec))
 await expectThrow('empty argv is rejected', tools.get('kicad_run').execute({ args: [] }, exec))
 

@@ -40,7 +40,7 @@ clone's absolute path.
 
 | Tool | Purpose |
 |---|---|
-| `kicad_status` | Resolve `kct`, report its path/version, the install root, `kicad-cli` presence and whether design writes are enabled. |
+| `kicad_status` | Resolve `kct`, report its path/version, the install root, `kicad-cli` presence, whether design writes are enabled, and which plugin version the running process actually loaded. |
 | `kicad_summary` | JSON summary of one `.kicad_pcb` (layers, footprints, nets, traces) or `.kicad_sch` (symbols, nets). |
 | `kicad_query` | Read-only queries: `sch.summary`, `sch.symbols`, `sch.nets`, `sch.validate`, `pcb.summary`, `pcb.footprints`, `pcb.nets`, `pcb.traces`, `bom`, `check`, `drc`, `erc.parse`, … with `--format json` by default and extra flags passable. |
 | `kicad_run` | Full `kct` argv pass-through (no shell) for everything else — routing, fixing, netlists, renders, exports. Design-writing commands are refused unless enabled. |
@@ -81,7 +81,7 @@ Set these in the profile's `cordis.patch.yml` row (`- id: dsh-kicad-tool`):
 | `dir` | `~/.kicad-tools` | kicad-tools checkout / install root |
 | `cli` | `""` | explicit `kct` executable path; overrides discovery |
 | `timeoutMs` | `120000` | per-invocation wall clock limit |
-| `maxOutputChars` | `30000` | per-stream output cap before truncation |
+| `maxOutputChars` | `100000` | per-stream output cap before truncation (JSON past the cap is not parsed) |
 | `allowMutating` | `false` | enable commands that write to KiCad files |
 
 ```yaml

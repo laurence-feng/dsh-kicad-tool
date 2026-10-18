@@ -36,7 +36,7 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 
 | 工具 | 作用 |
 |---|---|
-| `kicad_status` | 解析 `kct`，报告路径/版本、安装根目录、`kicad-cli` 是否存在、是否允许写设计文件。 |
+| `kicad_status` | 解析 `kct`，报告路径/版本、安装根目录、`kicad-cli` 是否存在、是否允许写设计文件，以及**当前进程实际加载的插件版本**。 |
 | `kicad_summary` | 单个 `.kicad_pcb`（层、封装、网络、走线）或 `.kicad_sch`（符号、网络）的 JSON 摘要。 |
 | `kicad_query` | 只读查询：`sch.summary`、`sch.symbols`、`sch.nets`、`sch.validate`、`pcb.summary`、`pcb.footprints`、`pcb.nets`、`pcb.traces`、`bom`、`check`、`drc`、`erc.parse` 等，默认 `--format json`，可透传额外 flag。 |
 | `kicad_run` | 完整的 `kct` argv 透传（不经 shell），覆盖布线、修复、网表、渲染、导出等其余命令；写文件的命令默认拒绝。 |
@@ -76,7 +76,7 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 | `dir` | `~/.kicad-tools` | kicad-tools 检出 / 安装根目录 |
 | `cli` | `""` | 显式 `kct` 路径，优先于自动发现 |
 | `timeoutMs` | `120000` | 单次调用墙钟上限 |
-| `maxOutputChars` | `30000` | 单流输出截断阈值 |
+| `maxOutputChars` | `100000` | 单流输出截断阈值（超出部分不解析为 JSON） |
 | `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
 
 ```yaml

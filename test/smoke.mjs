@@ -31,6 +31,14 @@ function report(label, ok, detail) {
   if (!ok) failures.push(label)
 }
 
+// The Harness validates a returned value against output.schema, which declares
+// additionalProperties: false. Catch undeclared keys here instead of in a session.
+function checkShape(label, toolName, value) {
+  const declared = new Set(Object.keys(registered.get(toolName).output.schema.properties ?? {}))
+  const extra = Object.keys(value).filter((key) => !declared.has(key))
+  report(`${label} matches output schema`, extra.length === 0, extra.length > 0 ? `undeclared: ${extra.join(', ')}` : undefined)
+}
+
 console.log(`plugin: ${name} (inject: ${inject.join(', ')})`)
 console.log(`tools:  ${[...registered.keys()].join(', ')}\n`)
 
@@ -40,21 +48,25 @@ for (const tool of ['kicad_status', 'kicad_summary', 'kicad_query', 'kicad_run']
 
 const status = await registered.get('kicad_status').execute({}, exec)
 report('kicad_status finds kct', status.available === true, status.reason)
+checkShape('kicad_status', 'kicad_status', status)
 
 const boardSummary = await registered.get('kicad_summary').execute({ path: board }, exec)
 report('kicad_summary(.kicad_pcb) returns JSON', boardSummary.exitCode === 0 && typeof boardSummary.data === 'object')
+checkShape('kicad_summary(.kicad_pcb)', 'kicad_summary', boardSummary)
 
 const schSummary = await registered.get('kicad_summary').execute({ path: schematic }, exec)
 report('kicad_summary(.kicad_sch) returns JSON', schSummary.exitCode === 0 && typeof schSummary.data === 'object')
 
 const nets = await registered.get('kicad_query').execute({ command: 'pcb.nets', path: board }, exec)
 report('kicad_query pcb.nets returns JSON', nets.exitCode === 0 && typeof nets.data === 'object')
+checkShape('kicad_query pcb.nets', 'kicad_query', nets)
 
 const bom = await registered.get('kicad_query').execute({ command: 'bom', path: schematic }, exec)
 report('kicad_query bom runs', bom.exitCode === 0)
 
 const version = await registered.get('kicad_run').execute({ args: ['--version'] }, exec)
 report('kicad_run --version runs', version.exitCode === 0 && version.stdout.includes('kicad-tools'))
+checkShape('kicad_run --version', 'kicad_run', version)
 
 let blocked = null
 try {

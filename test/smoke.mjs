@@ -33,6 +33,20 @@ function report(label, ok, detail) {
 
 // The Harness validates a returned value against output.schema, which declares
 // additionalProperties: false. Catch undeclared keys here instead of in a session.
+// The Host rejects any result holding `undefined` ("value is not lossless JSON"), which is why
+// text output must not carry a `data` key at all.
+function findUndefined(node, path = 'value') {
+  if (node === undefined) return [path]
+  if (node === null || typeof node !== 'object') return []
+  if (Array.isArray(node)) return node.flatMap((entry, index) => findUndefined(entry, `${path}[${index}]`))
+  return Object.entries(node).flatMap(([key, entry]) => findUndefined(entry, `${path}.${key}`))
+}
+
+function checkLossless(label, value) {
+  const bad = findUndefined(value)
+  report(`${label} is lossless JSON`, bad.length === 0, bad.length > 0 ? `undefined at: ${bad.join(', ')}` : undefined)
+}
+
 function checkShape(label, toolName, value) {
   const declared = new Set(Object.keys(registered.get(toolName).output.schema.properties ?? {}))
   const extra = Object.keys(value).filter((key) => !declared.has(key))
@@ -49,17 +63,25 @@ for (const tool of ['kicad_status', 'kicad_summary', 'kicad_query', 'kicad_run']
 const status = await registered.get('kicad_status').execute({}, exec)
 report('kicad_status finds kct', status.available === true, status.reason)
 checkShape('kicad_status', 'kicad_status', status)
+checkLossless('kicad_status', status)
 
 const boardSummary = await registered.get('kicad_summary').execute({ path: board }, exec)
 report('kicad_summary(.kicad_pcb) returns JSON', boardSummary.exitCode === 0 && typeof boardSummary.data === 'object')
 checkShape('kicad_summary(.kicad_pcb)', 'kicad_summary', boardSummary)
+checkLossless('kicad_summary(.kicad_pcb)', boardSummary)
 
 const schSummary = await registered.get('kicad_summary').execute({ path: schematic }, exec)
 report('kicad_summary(.kicad_sch) returns JSON', schSummary.exitCode === 0 && typeof schSummary.data === 'object')
 
+const labels = await registered.get('kicad_query').execute({ command: 'sch.labels', path: schematic, format: 'table' }, exec)
+report('kicad_query text output runs', labels.exitCode === 0)
+checkLossless('kicad_query text output', labels)
+checkShape('kicad_query text output', 'kicad_query', labels)
+
 const nets = await registered.get('kicad_query').execute({ command: 'pcb.nets', path: board }, exec)
 report('kicad_query pcb.nets returns JSON', nets.exitCode === 0 && typeof nets.data === 'object')
 checkShape('kicad_query pcb.nets', 'kicad_query', nets)
+checkLossless('kicad_query pcb.nets', nets)
 
 const bom = await registered.get('kicad_query').execute({ command: 'bom', path: schematic }, exec)
 report('kicad_query bom runs', bom.exitCode === 0)

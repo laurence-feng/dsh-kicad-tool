@@ -185,6 +185,15 @@ check('events route exists once the service arrives', lateRoutes.has('exact:/plu
 const forbidden = await request('GET', '/plugin/kicad-tool/state', undefined, 'evil.example.com')
 check('non-loopback hosts are refused', forbidden.status === 403, String(forbidden.status))
 
+/* ---------- defaults are absolute ---------- */
+
+// The shipped defaults carry `~`; resolveConfig must expand them, otherwise tool discovery looks
+// for a literal "~/.local/..." path and reports "kct not found" even though the install exists.
+const { resolveConfig, DEFAULTS } = await import('../lib/config.js')
+const defaults = await resolveConfig({})
+check('default kicadToolsDir is absolute', defaults.kicadToolsDir.startsWith('/'), defaults.kicadToolsDir)
+check('default version is pinned', DEFAULTS.kicadToolsVersion === '0.23.0', DEFAULTS.kicadToolsVersion)
+
 /* ---------- report ---------- */
 
 if (failures.length > 0) {

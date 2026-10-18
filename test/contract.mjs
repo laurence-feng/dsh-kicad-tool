@@ -221,7 +221,7 @@ check('kicad_status reports the loaded plugin version', status.pluginVersion ===
 
 const missing = mount({ kicadToolsDir: '/nonexistent-kicad-tools' })
 const broken = await missing.get('kicad_status').execute({}, exec)
-check('missing toolchain is reported, not thrown', broken.available === false && broken.reason.includes('git clone'))
+check('missing toolchain is reported, not thrown', broken.available === false && broken.reason.includes('settings page') && broken.reason.includes('uv pip install'), broken.reason)
 
 /* ---------- report ---------- */
 

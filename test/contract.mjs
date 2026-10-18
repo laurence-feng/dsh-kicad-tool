@@ -4,6 +4,7 @@
 //
 // For each call it asserts: no throw, lossless JSON, output matching output.schema, and a
 // render() that yields text blocks. Negative cases assert the guards fire.
+import { existsSync, readFileSync } from 'node:fs'
 import { apply } from '../lib/index.js'
 
 const root = process.argv[2] ?? `${process.env.HOME}/.kicad-tools`
@@ -143,6 +144,13 @@ const boardCommands = ['pcb.summary', 'pcb.footprints', 'pcb.nets', 'pcb.padmap'
 for (const command of schematicCommands) cases.push({ tool: 'kicad_query', args: { command, path: schematic }, expectExit: 0 })
 for (const command of boardCommands) cases.push({ tool: 'kicad_query', args: { command, path: board }, expectExit: 0, allowNonZero: true })
 cases.push({ tool: 'kicad_query', args: { command: 'sch.labels', path: schematic, format: 'table' }, expectExit: 0 })
+
+// Big real-world board: JSON output far past the old 30k cap. Only runs where the file exists.
+const bigSchematic = '/Users/laurence/Datas/Workdesk/SRFLab/ezIOC_Board/ezIOC_Board.kicad_sch'
+if (existsSync(bigSchematic)) {
+  cases.push({ tool: 'kicad_query', args: { command: 'sch.labels', path: bigSchematic, format: 'json' }, expectExit: 0 })
+  cases.push({ tool: 'kicad_query', args: { command: 'bom', path: bigSchematic }, expectExit: 0 })
+}
 cases.push({ tool: 'kicad_query', args: { command: 'pcb.nets', path: board, flags: ['--filter', 'VCC*'] }, expectExit: 0 })
 
 let ran = 0
@@ -186,6 +194,12 @@ await expectThrow('unknown query command is rejected', tools.get('kicad_query').
 await expectThrow('malformed flag is rejected', tools.get('kicad_query').execute({ command: 'pcb.nets', path: board, flags: ['--filter; rm -rf /'] }, exec))
 await expectThrow('summary rejects other extensions', tools.get('kicad_summary').execute({ path: 'notes.txt' }, exec))
 await expectThrow('empty argv is rejected', tools.get('kicad_run').execute({ args: [] }, exec))
+
+// The reported version must be the code that is actually loaded: a stale module generation is
+// otherwise indistinguishable from a fixed one.
+const status = await tools.get('kicad_status').execute({}, exec)
+const packageVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
+check('kicad_status reports the loaded plugin version', status.pluginVersion === packageVersion, `reported ${status.pluginVersion}, package ${packageVersion}`)
 
 const missing = mount({ dir: '/nonexistent-kicad-tools' })
 const broken = await missing.get('kicad_status').execute({}, exec)

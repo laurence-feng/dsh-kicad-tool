@@ -65,21 +65,23 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 
 ## 预览路由
 
-`kicad_preview` 返回 Harness web server 上的 URL（仅回环地址）。后端路由：
+`kicad_preview` 会**在随机端口上单独起一个回环监听**（首次调用时惰性启动，插件卸载时关闭），
+返回该端口上的 URL。它故意不挂在 Harness 的 web server 上：内置浏览器拒绝打开 DSH 应用自身
+的 origin，挂在 GUI 端口上的预览地址只能在外置浏览器里用。
 
 | 路由 | 用途 |
 |---|---|
-| `/plugin/kicanvas/proj/<目录 token>/<文件名>?view=1&controls=full\|basic\|none` | 查看页；同时把同目录所有图纸列成 `<kicanvas-source>` |
-| `/plugin/kicanvas/proj/<目录 token>/<文件名>` | KiCad 文件本身，按 `text/plain` 返回 |
-| `/plugin/kicanvas/kicanvas.js` | 本地构建的 KiCanvas 包 |
-| `/plugin/kicanvas/status` | JSON：包是否已构建、路径在哪 |
+| `/proj/<目录 token>/<文件名>?view=1&controls=full\|basic\|none` | 查看页；同时把同目录所有图纸列成 `<kicanvas-source>` |
+| `/proj/<目录 token>/<文件名>` | KiCad 文件本身，按 `text/plain` 返回 |
+| `/kicanvas.js` | 本地构建的 KiCanvas 包 |
+| `/status` | JSON：包是否已构建、路径在哪 |
 
 `<目录 token>` 是工程目录的 base64url。URL 必须以真实文件名结尾：KiCanvas 用 URL 的 basename
 当文档名，查询串路由会让它看到一个叫 `file` 的文件，报 `No vaild root schematic was found`。
 查看页会给每个同级 `.kicad_sch`/`.kicad_pcb` 生成一个 `<kicanvas-source>`，层级工程因此能解析子图。
 
-只提供 KiCad 扩展名（`.kicad_pcb`、`.kicad_sch`、`.kicad_sym`、`.kicad_wks`、`.kicad_pro`、
-`.kicad_prj`、`.kicad_dru`），单文件上限 64 MB，且请求必须来自回环 `Host`——这些路由不能当通用文件读取器用。
+只提供 KiCad 扩展名，文件名必须是工程目录内的单段路径，单文件上限 64 MB，且只响应回环 `Host`
+——它不能当通用文件读取器用。
 
 ## 工具链的动态加载
 

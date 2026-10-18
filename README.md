@@ -73,10 +73,16 @@ Examples the model can issue:
 
 | Route | Purpose |
 |---|---|
-| `/plugin/kicanvas/view?file=<abs>&controls=full\|basic\|none` | viewer page embedding `<kicanvas-embed>` |
-| `/plugin/kicanvas/file?file=<abs>` | the KiCad file itself, served as `text/plain` |
+| `/plugin/kicanvas/proj/<dir-token>/<name>?view=1&controls=full\|basic\|none` | viewer page; also lists every sibling sheet as `<kicanvas-source>` |
+| `/plugin/kicanvas/proj/<dir-token>/<name>` | the KiCad file itself, served as `text/plain` |
 | `/plugin/kicanvas/kicanvas.js` | the local KiCanvas bundle |
 | `/plugin/kicanvas/status` | JSON: is the bundle built, and where |
+
+`<dir-token>` is the base64url of the project directory. The URL must end in the real file name:
+KiCanvas takes a document's name from the URL basename, and a query-string route makes it see a
+file called `file`, which fails with `No vaild root schematic was found`. The viewer also emits one
+`<kicanvas-source>` per sibling `.kicad_sch`/`.kicad_pcb`, so hierarchical projects resolve their
+sheets instead of loading a single orphaned page.
 
 Only KiCad extensions are ever served (`.kicad_pcb`, `.kicad_sch`, `.kicad_sym`, `.kicad_wks`,
 `.kicad_pro`, `.kicad_prj`, `.kicad_dru`), files are capped at 64 MB, and every request must come

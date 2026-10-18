@@ -141,6 +141,34 @@ const removed = await request('POST', '/plugin/kicad-tool/purge')
 check('purge removes the managed checkout', removed.json.removed.includes(canvasDir), JSON.stringify(removed.json))
 check('purge deletes it from disk', !existsSync(canvasDir))
 
+/* ---------- routes wait for the webServer service ---------- */
+
+// The service is usually constructed after the plugin applies; ctx.inject must be used, or every
+// route silently never exists (the page then reports HTTP 404).
+const lateRoutes = new Map()
+const lateWebServer = {
+  register(route) {
+    lateRoutes.set(`${route.kind}:${route.path}`, route)
+    return () => lateRoutes.delete(`${route.kind}:${route.path}`)
+  },
+}
+let injected = false
+apply(
+  {
+    tools: { register: () => () => {} },
+    workingDirectory: { ensure: async () => process.cwd() },
+    effect: (factory) => factory(),
+    inject: (deps, callback) => {
+      injected = deps.includes('webServer')
+      callback({ get: (name) => (name === 'webServer' ? lateWebServer : undefined), effect: (factory) => factory() })
+    },
+  },
+  {},
+)
+check('plugin waits for webServer through ctx.inject', injected)
+check('state route exists once the service arrives', lateRoutes.has('exact:/plugin/kicad-tool/state'), [...lateRoutes.keys()].join(', '))
+check('events route exists once the service arrives', lateRoutes.has('exact:/plugin/kicad-tool/events'))
+
 /* ---------- loopback only ---------- */
 
 const forbidden = await request('GET', '/plugin/kicad-tool/state', undefined, 'evil.example.com')

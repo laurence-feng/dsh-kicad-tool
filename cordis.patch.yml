@@ -1,0 +1,13 @@
+# dsh-kicad-tool bundle layer.
+#
+# Declared via the `dsh.bundle.patch` manifest in package.json, so
+# `dsh plugin --profile <name> add dsh-kicad-tool` mounts this row automatically.
+#
+# `dir` is the kicad-tools checkout the plugin resolves `kct` from (its `.venv/bin/kct`
+# is preferred). `allowMutating` gates every command that writes to KiCad files.
+- insert:
+    - id: dsh-kicad-tool
+      name: dsh-kicad-tool
+      config:
+        dir: '~/.kicad-tools'
+        allowMutating: false

@@ -1,0 +1,54 @@
+{
+  "name": "dsh-kicad-tool",
+  "version": "0.1.0",
+  "description": "KiCad tooling for DeepSeek Harness: exposes the kct CLI (kicad-tools) as agent tools for schematic/PCB inspection, DRC/ERC, BOM and authoring workflows.",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib/**",
+    "locale/**",
+    "icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "plugin",
+    "kicad",
+    "kicad-tools",
+    "kct",
+    "pcb",
+    "eda",
+    "drc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laurence-feng/dsh-kicad-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/laurence-feng/dsh-kicad-tool/issues"
+  },
+  "homepage": "https://github.com/laurence-feng/dsh-kicad-tool#readme"
+}

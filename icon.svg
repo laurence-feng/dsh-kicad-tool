@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="KiCad tools">
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="#0f766e"/>
+  <g stroke="#ccfbf1" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M18 46V26a4 4 0 0 1 4-4h10"/>
+    <path d="M18 36h9a4 4 0 0 1 4 4v6"/>
+    <path d="M32 22l8-6 8 6v12l-8 6-8-6z"/>
+  </g>
+  <g fill="#99f6e4">
+    <circle cx="18" cy="46" r="3.2"/>
+    <circle cx="31" cy="46" r="3.2"/>
+    <circle cx="48" cy="22" r="3.2"/>
+    <circle cx="48" cy="34" r="3.2"/>
+  </g>
+</svg>

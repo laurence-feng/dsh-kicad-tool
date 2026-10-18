@@ -1,0 +1,112 @@
+# dsh-kicad-tool
+
+把独立的 Python 工具集 **[kicad-tools](https://github.com/rjwalters/kicad-tools)**（命令行 `kct`）
+接进 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 会话的插件：检查原理图与 PCB、
+跑 DRC/ERC、生成 BOM，以及直接驱动会改文件的命令——这些都以普通 agent 工具的形式出现。
+
+`kicad-tools` 不需要运行中的 KiCad，输出是机器可读的 JSON，正好适合 agent：插件只负责找到 `kct`
+并把结构化参数传进去。
+
+## 依赖
+
+- Node.js ≥ 18（Harness 宿主）。
+- 本地 `kicad-tools` 检出及 CLI。默认期望放在 `~/.kicad-tools`：
+
+```bash
+git clone https://github.com/rjwalters/kicad-tools ~/.kicad-tools
+uv venv -p 3.13 ~/.kicad-tools/.venv
+uv pip install --python ~/.kicad-tools/.venv/bin/python -e ~/.kicad-tools
+~/.kicad-tools/.venv/bin/kct --version
+```
+
+`kicad-cli` 是可选的：`kct` 自带纯 Python 的 DRC，`kicad_status` 会报告 `kicad-cli` 是否在 `PATH` 上。
+
+## 安装
+
+把包链接进 Harness profile：
+
+```bash
+dsh plugin --profile desktop add /path/to/dsh-kicad-tool
+```
+
+包内声明了 `dsh.bundle.patch`，安装后该行会自动挂载，四个工具无需重启就出现在当前会话里；
+全新 clone 的目录用同样的命令和绝对路径即可。
+
+## 工具
+
+| 工具 | 作用 |
+|---|---|
+| `kicad_status` | 解析 `kct`，报告路径/版本、安装根目录、`kicad-cli` 是否存在、是否允许写设计文件。 |
+| `kicad_summary` | 单个 `.kicad_pcb`（层、封装、网络、走线）或 `.kicad_sch`（符号、网络）的 JSON 摘要。 |
+| `kicad_query` | 只读查询：`sch.summary`、`sch.symbols`、`sch.nets`、`sch.validate`、`pcb.summary`、`pcb.footprints`、`pcb.nets`、`pcb.traces`、`bom`、`check`、`drc`、`erc.parse` 等，默认 `--format json`，可透传额外 flag。 |
+| `kicad_run` | 完整的 `kct` argv 透传（不经 shell），覆盖布线、修复、网表、渲染、导出等其余命令；写文件的命令默认拒绝。 |
+
+调用示例：
+
+```json
+// kicad_summary
+{ "path": "boards/00-simple-led/output/simple_led.kicad_pcb" }
+
+// kicad_query
+{ "command": "pcb.nets", "path": "board.kicad_pcb", "flags": ["--filter", "VCC*"] }
+
+// kicad_run
+{ "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
+```
+
+## 工具链的动态加载
+
+插件不写死任何二进制路径，每次调用都会重新解析 `kct`，顺序为：
+
+1. `config.cli`（显式可执行文件路径）
+2. `$DSH_KCT_CLI`
+3. `<dir>/.venv/bin/kct`（POSIX）或 `<dir>\.venv\Scripts\kct.exe`（Windows）
+4. `$PATH` 上的 `kct`
+5. 当 `<dir>` 是没有 venv 的检出目录时，用 `uv run --directory <dir> kct`
+
+因此重新 clone、重建 venv、挪动安装位置都会在下一次工具调用时被感知；解析结果不跨调用缓存，
+找不到工具链时给出可执行的安装提示而不是堆栈。
+
+## 配置
+
+在 profile 的 `cordis.patch.yml` 对应行（`- id: dsh-kicad-tool`）里设置：
+
+| 键 | 默认 | 含义 |
+|---|---|---|
+| `dir` | `~/.kicad-tools` | kicad-tools 检出 / 安装根目录 |
+| `cli` | `""` | 显式 `kct` 路径，优先于自动发现 |
+| `timeoutMs` | `120000` | 单次调用墙钟上限 |
+| `maxOutputChars` | `30000` | 单流输出截断阈值 |
+| `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
+
+```yaml
+- id: dsh-kicad-tool
+  config:
+    dir: '~/work/kicad-tools'
+    allowMutating: true
+```
+
+### 为什么默认禁止写
+
+`kicad_run` 接受任意 `kct` argv。`pcb remove-footprint`、`route`、`fix-drc`、`zones`、`render`、
+`export` 之类的命令会改文件或生成文件，而插件是直接 `spawn` 子进程、不经过 Harness 的文件沙箱。
+所以默认是一张只读子命令白名单，其他（包括未知命令）都需要显式 `allowMutating: true`。
+
+## 安全说明
+
+- 参数以 argv 数组交给 `spawn`，不经 shell，因此不存在命令注入。
+- `kicad_query` 只暴露固定命令表，并校验 flag 格式。
+- 输出按流截断（`maxOutputChars`）；超时或本轮被中止时会杀掉进程。
+
+## 开发
+
+```bash
+node test/smoke.mjs            # 用桩上下文挂载，在真实样例文件上跑工具
+```
+
+冒烟测试使用 kicad-tools 仓库里的样例（`boards/00-simple-led`、`examples/01-schematic-analysis`），
+工具链或 CLI 契约变化时会直接报错。
+
+## 许可证
+
+MIT。`kicad-tools` 本身也是 MIT，位于其独立仓库；本插件只是调用它。

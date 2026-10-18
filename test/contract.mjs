@@ -4,8 +4,13 @@
 //
 // For each call it asserts: no throw, lossless JSON, output matching output.schema, and a
 // render() that yields text blocks. Negative cases assert the guards fire.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { apply } from '../lib/index.js'
+
+// Keep the settings file out of the user's real ~/.dsh.
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'kicad-contract-'))
 
 const root = process.argv[2] ?? `${process.env.HOME}/.kicad-tools`
 const board = `${root}/boards/00-simple-led/output/simple_led.kicad_pcb`
@@ -24,7 +29,7 @@ function mount(config = {}) {
       tools: { register: (definition) => (tools.set(definition.name, definition), () => {}) },
       workingDirectory: { ensure: async () => process.cwd() },
     },
-    { dir: root, ...config },
+    { kicadToolsDir: root, ...config },
   )
   return tools
 }
@@ -214,7 +219,7 @@ const status = await tools.get('kicad_status').execute({}, exec)
 const packageVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
 check('kicad_status reports the loaded plugin version', status.pluginVersion === packageVersion, `reported ${status.pluginVersion}, package ${packageVersion}`)
 
-const missing = mount({ dir: '/nonexistent-kicad-tools' })
+const missing = mount({ kicadToolsDir: '/nonexistent-kicad-tools' })
 const broken = await missing.get('kicad_status').execute({}, exec)
 check('missing toolchain is reported, not thrown', broken.available === false && broken.reason.includes('git clone'))
 

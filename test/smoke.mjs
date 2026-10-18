@@ -4,7 +4,13 @@
 //   node test/smoke.mjs [/path/to/kicad-tools]
 //
 // Exits non-zero when a tool fails, so it doubles as a pre-publish check.
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { apply, inject, name } from '../lib/index.js'
+
+// Keep the settings file out of the user's real ~/.dsh.
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'kicad-smoke-'))
 
 const root = process.argv[2] ?? `${process.env.HOME}/.kicad-tools`
 const board = `${root}/boards/00-simple-led/output/simple_led.kicad_pcb`
@@ -21,7 +27,7 @@ const ctx = {
   workingDirectory: { ensure: async () => process.cwd() },
 }
 
-apply(ctx, { dir: root })
+apply(ctx, { kicadToolsDir: root })
 
 const failures = []
 const exec = { agent: {}, signal: AbortSignal.timeout(120000) }

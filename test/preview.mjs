@@ -1,11 +1,15 @@
 // Preview server + kicad_preview tool, exercised over a real loopback HTTP server.
 //
 //   node test/preview.mjs [/path/to/kicad-tools]
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { request as httpRequest } from 'node:http'
-import { basename, dirname } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { apply } from '../lib/index.js'
 import { encodeDir } from '../lib/preview.js'
+
+// Keep the settings file out of the user's real ~/.dsh.
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'kicad-preview-'))
 
 const root = process.argv[2] ?? `${process.env.HOME}/.kicad-tools`
 const schematic = `${root}/examples/01-schematic-analysis/simple_rc.kicad_sch`

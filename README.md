@@ -11,37 +11,30 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 ## Requirements
 
 - Node.js ≥ 18 (the Harness host).
-- A local `kicad-tools` checkout with its CLI installed. The plugin expects it at
-  `~/.kicad-tools` by default:
+- `git`, plus `uv` for the Python CLI and `npm` for the viewer build. Both are checked live and
+  reported on the settings page; a missing command fails the action with an install hint instead
+  of hanging.
 
-```bash
-git clone https://github.com/rjwalters/kicad-tools ~/.kicad-tools
-uv venv -p 3.13 ~/.kicad-tools/.venv
-uv pip install --python ~/.kicad-tools/.venv/bin/python -e ~/.kicad-tools
-~/.kicad-tools/.venv/bin/kct --version
-```
-
-`kicad-cli` is optional: `kct` ships a pure-Python DRC, and `kicad_status` reports whether
-`kicad-cli` is on `PATH`.
-
-For the visual preview, a local [KiCanvas](https://github.com/theacodes/kicanvas) build:
-
-```bash
-git clone https://github.com/theacodes/kicanvas ~/.kicanvas
-cd ~/.kicanvas && npm ci && npm run build     # → build/kicanvas.js (≈470 KB, self-contained)
-```
+Nothing has to be cloned by hand: the plugin's settings page installs and builds both checkouts.
 
 ## Install
 
-Link this package into a Harness profile:
-
 ```bash
-dsh plugin --profile desktop add /path/to/dsh-kicad-tool
+dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
-The package declares `dsh.bundle.patch`, so the row is mounted automatically and the four tools
-appear in the running session without a restart. For a fresh clone the same call works with the
-clone's absolute path.
+Then open **Settings → KiCad 工具** and press **安装** for `kicad-tools` and for `KiCanvas`. The default
+roots are:
+
+```text
+~/.local/share/dsh-kicad-tool/kicad-tools   git checkout + .venv (kct CLI)
+~/.local/share/dsh-kicad-tool/kicanvas      git checkout + build/kicanvas.js (viewer)
+```
+
+Both paths are editable in the page and apply immediately (no restart). The page also offers
+**更新 / 重新安装 / 删除** per repository, a dependency readout (`git`, `uv`, `npm`), the last
+operation log, and **删除数据并卸载** — which deletes both checkouts and prints the exact
+`dsh plugin ... remove` command (the Host cannot uninstall its own package).
 
 ## Tools
 
@@ -119,7 +112,8 @@ instead of a stack trace.
 
 ## Configuration
 
-Set these in the profile's `cordis.patch.yml` row (`- id: dsh-kicad-tool`):
+Settings live in `<dshHome>/kicad-tool.json` and are edited in the Settings page. Values in the
+profile's `cordis.patch.yml` row act as composition-time defaults only:
 
 | key | default | meaning |
 |---|---|---|
@@ -128,13 +122,12 @@ Set these in the profile's `cordis.patch.yml` row (`- id: dsh-kicad-tool`):
 | `timeoutMs` | `120000` | per-invocation wall clock limit |
 | `maxOutputChars` | `100000` | per-stream output cap before truncation (JSON past the cap is not parsed) |
 | `allowMutating` | `false` | enable commands that write to KiCad files |
-| `kicanvasDir` | `~/.kicanvas` | KiCanvas checkout whose `build/kicanvas.js` backs `kicad_preview` |
+| `kicanvasDir` | `~/.local/share/dsh-kicad-tool/kicanvas` | KiCanvas checkout (Settings page) |
 
 ```yaml
 - id: dsh-kicad-tool
   config:
-    dir: '~/work/kicad-tools'
-    allowMutating: true
+    allowMutating: true      # composition-time default; the Settings page also shows paths
 ```
 
 ### Why writes are off by default
@@ -154,7 +147,7 @@ subcommands; anything else (including unknown commands) requires `allowMutating:
 ## Development
 
 ```bash
-node test/smoke.mjs            # mounts against a stub context, exercises the tools on real samples
+npm test                       # smoke + contract + preview + events + settings backends
 ```
 
 The smoke test uses sample files from the kicad-tools checkout (`boards/00-simple-led`,

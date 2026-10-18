@@ -1,11 +1,16 @@
 // Auto-open plumbing: Host pushes each preview URL over SSE; the Client half opens the tab.
 //
 //   node test/events.mjs [/path/to/kicad-tools]
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { createServer } from 'node:http'
 import { request as httpRequest } from 'node:http'
+import { join } from 'node:path'
 import { apply } from '../lib/index.js'
 import { EVENTS_ROUTE } from '../lib/events.js'
+
+// Keep the settings file out of the user's real ~/.dsh.
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'kicad-events-'))
 
 const root = process.argv[2] ?? `${process.env.HOME}/.kicad-tools`
 const schematic = `${root}/examples/01-schematic-analysis/simple_rc.kicad_sch`

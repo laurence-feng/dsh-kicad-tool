@@ -10,34 +10,27 @@
 ## 依赖
 
 - Node.js ≥ 18（Harness 宿主）。
-- 本地 `kicad-tools` 检出及 CLI。默认期望放在 `~/.kicad-tools`：
+- `git`；Python 侧需要 `uv`，查看器构建需要 `npm`。两个命令都会实时检测并显示在设置页上，
+  缺失时直接报错并给安装命令，不会卡住。
 
-```bash
-git clone https://github.com/rjwalters/kicad-tools ~/.kicad-tools
-uv venv -p 3.13 ~/.kicad-tools/.venv
-uv pip install --python ~/.kicad-tools/.venv/bin/python -e ~/.kicad-tools
-~/.kicad-tools/.venv/bin/kct --version
-```
-
-`kicad-cli` 是可选的：`kct` 自带纯 Python 的 DRC，`kicad_status` 会报告 `kicad-cli` 是否在 `PATH` 上。
-
-想用可视化预览，还需要本地构建一份 [KiCanvas](https://github.com/theacodes/kicanvas)：
-
-```bash
-git clone https://github.com/theacodes/kicanvas ~/.kicanvas
-cd ~/.kicanvas && npm ci && npm run build     # → build/kicanvas.js（约 470 KB，自包含）
-```
+不需要手工 clone：插件的设置页负责安装与构建两个检出。
 
 ## 安装
 
-把包链接进 Harness profile：
-
 ```bash
-dsh plugin --profile desktop add /path/to/dsh-kicad-tool
+dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
-包内声明了 `dsh.bundle.patch`，安装后该行会自动挂载，四个工具无需重启就出现在当前会话里；
-全新 clone 的目录用同样的命令和绝对路径即可。
+然后打开 **设置 → KiCad 工具**，分别点 `kicad-tools` 和 `KiCanvas` 的 **安装**。默认根目录：
+
+```text
+~/.local/share/dsh-kicad-tool/kicad-tools   git 检出 + .venv（kct 命令行）
+~/.local/share/dsh-kicad-tool/kicanvas      git 检出 + build/kicanvas.js（查看器）
+```
+
+两条路径都能在页面里改，立即生效、不用重启。页面还提供每个仓库的 **更新 / 重新安装 / 删除**、
+依赖检测（`git`、`uv`、`npm`）、最近操作日志，以及 **删除数据并卸载**——它删掉两个检出并给出
+准确的 `dsh plugin ... remove` 命令（宿主无法卸载自己的包）。
 
 ## 工具
 
@@ -109,7 +102,7 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 
 ## 配置
 
-在 profile 的 `cordis.patch.yml` 对应行（`- id: dsh-kicad-tool`）里设置：
+设置保存在 `<dshHome>/kicad-tool.json`，由设置页编辑；profile 的 `cordis.patch.yml` 只作为组合期默认值：
 
 | 键 | 默认 | 含义 |
 |---|---|---|
@@ -118,13 +111,12 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 | `timeoutMs` | `120000` | 单次调用墙钟上限 |
 | `maxOutputChars` | `100000` | 单流输出截断阈值（超出部分不解析为 JSON） |
 | `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
-| `kicanvasDir` | `~/.kicanvas` | KiCanvas 检出目录，`kicad_preview` 用它的 `build/kicanvas.js` |
+| `kicanvasDir` | `~/.local/share/dsh-kicad-tool/kicanvas` | KiCanvas 检出目录（设置页） |
 
 ```yaml
 - id: dsh-kicad-tool
   config:
-    dir: '~/work/kicad-tools'
-    allowMutating: true
+    allowMutating: true      # 组合期默认值；路径由设置页管理
 ```
 
 ### 为什么默认禁止写
@@ -142,7 +134,7 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 ## 开发
 
 ```bash
-node test/smoke.mjs            # 用桩上下文挂载，在真实样例文件上跑工具
+npm test                       # smoke + contract + preview + events + settings
 ```
 
 冒烟测试使用 kicad-tools 仓库里的样例（`boards/00-simple-led`、`examples/01-schematic-analysis`），

@@ -124,10 +124,9 @@ window.__ModuleLoader__.load({
         React.createElement(
           'div',
           { style: subStyle },
-          repo.url,
+          repo.package ? 'PyPI: ' + repo.package : '',
           ' · ',
           React.createElement('span', { style: { color: installed ? okColor : warnColor } }, statusText),
-          repo.commit ? ' · ' + repo.commit : '',
         ),
         React.createElement('div', { style: { ...subStyle, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' } }, repo.path),
         repo.artifact
@@ -160,6 +159,7 @@ window.__ModuleLoader__.load({
       var [error, setError] = React.useState('')
       var [notice, setNotice] = React.useState('')
       var [kctPath, setKctPath] = React.useState('')
+      var [kctVersion, setKctVersion] = React.useState('')
       var [saving, setSaving] = React.useState(false)
 
       var refresh = React.useCallback(async function () {
@@ -168,6 +168,7 @@ window.__ModuleLoader__.load({
           setState(next)
           setError('')
           setKctPath(function (current) { return current === '' ? next.config.kicadToolsDir : current })
+          setKctVersion(function (current) { return current === '' ? String(next.config.kicadToolsVersion ?? '') : current })
         } catch (failure) {
           setError(String(failure.message || failure))
         }
@@ -183,7 +184,7 @@ window.__ModuleLoader__.load({
         setSaving(true)
         setNotice('')
         try {
-          var next = await call(CONFIG_PATH, { method: 'PUT', body: { kicadToolsDir: kctPath } })
+          var next = await call(CONFIG_PATH, { method: 'PUT', body: { kicadToolsDir: kctPath, kicadToolsVersion: kctVersion } })
           setState(next)
           setNotice('路径已保存')
         } catch (failure) {
@@ -254,11 +255,26 @@ window.__ModuleLoader__.load({
           React.createElement(
             'div',
             { style: rowStyle },
-            React.createElement('button', { style: buttonStyle, disabled: saving, onClick: savePaths }, saving ? '保存中…' : '保存路径'),
+            React.createElement(
+              'span',
+              { style: { fontSize: '12px', width: '110px', color: 'var(--dsw-alias-label-secondary, #999)' } },
+              '版本',
+            ),
+            React.createElement('input', {
+              style: { ...inputStyle, flex: '0 0 120px', minWidth: '100px' },
+              value: kctVersion,
+              spellCheck: false,
+              onChange: function (event) { setKctVersion(event.target.value) },
+            }),
+          ),
+          React.createElement(
+            'div',
+            { style: rowStyle },
+            React.createElement('button', { style: buttonStyle, disabled: saving, onClick: savePaths }, saving ? '保存中…' : '保存设置'),
             React.createElement(
               'span',
               { style: { fontSize: '11px', color: 'var(--dsw-alias-label-secondary, #999)' } },
-              '依赖：git ' + (deps.git ? '✓' : '✗') + ' · uv ' + (deps.uv ? '✓' : '✗') + ' · KiCanvas 内置',
+              '依赖：uv ' + (deps.uv ? '✓' : '✗') + ' · 从 PyPI 安装 · KiCanvas 内置',
             ),
           ),
         ),

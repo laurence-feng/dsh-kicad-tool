@@ -10,8 +10,8 @@
 ## 依赖
 
 - Node.js ≥ 18（Harness 宿主）。
-- `git` 与 `uv`（Python 侧）。两者都会实时检测并显示在设置页上，缺失时直接报错并给安装命令，
-  不会卡住。
+- `uv`（Python 侧）。会实时检测并显示在设置页上，缺失时直接报错并给安装命令，不会卡住。
+  不再需要 `git`。
 
 查看器是**内置**的：`assets/kicanvas.js`（468 KB，MIT）随插件发布，离线可用、不需要构建步骤。
 运行时只需要安装 Python 工具链。
@@ -25,8 +25,11 @@ dsh plugin --profile desktop add dsh-kicad-tool
 然后打开 **设置 → KiCad 工具**，点一次 **安装**。默认根目录：
 
 ```text
-~/.local/share/dsh-kicad-tool/kicad-tools   git 检出 + .venv（kct 命令行）
+~/.local/share/dsh-kicad-tool/kicad-tools   .venv（从 PyPI 安装 kicad-tools，约 50 MB）
 ```
+
+`kct` 从 PyPI 装钉住的版本（默认 `0.23.0`），不再 clone 源码：上游仓库约 440 MB，绝大部分是示例
+板子和测试夹具，CLI 本身用不到。改版本号再点 **更新** 就能换版本。
 
 路径可在页面里改，立即生效、不用重启。页面还提供 **更新 / 重新安装 / 删除**、依赖检测
 （`git`、`uv`，以及「KiCanvas 内置」）、最近操作日志，以及 **删除数据并卸载**——它删掉检出并给出

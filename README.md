@@ -11,8 +11,8 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 ## Requirements
 
 - Node.js ≥ 18 (the Harness host).
-- `git` and `uv` for the Python CLI. Both are checked live and reported on the settings page; a
-  missing command fails the action with an install hint instead of hanging.
+- `uv` for the Python CLI. It is checked live and reported on the settings page; a missing command
+  fails the action with an install hint instead of hanging. `git` is not needed.
 
 The viewer is **vendored**: `assets/kicanvas.js` (468 KB, MIT) ships inside the plugin, so previews
 work offline with no build step. Only the Python toolchain is installed at runtime.
@@ -26,8 +26,12 @@ dsh plugin --profile desktop add dsh-kicad-tool
 Then open **Settings → KiCad 工具** and press **安装** once. The default root is:
 
 ```text
-~/.local/share/dsh-kicad-tool/kicad-tools   git checkout + .venv (kct CLI)
+~/.local/share/dsh-kicad-tool/kicad-tools   .venv with kicad-tools from PyPI (~50 MB)
 ```
+
+`kct` is installed from PyPI at a pinned version (default `0.23.0`), not cloned from source: the
+upstream checkout is ~440 MB, mostly example boards and test fixtures, none of which the CLI needs.
+Change the version field and press **更新** to move to another release.
 
 The path is editable in the page and applies immediately (no restart). The page also offers
 **更新 / 重新安装 / 删除**, a dependency readout (`git`, `uv`, plus "KiCanvas 内置"), the last

@@ -105,6 +105,13 @@ check('settings file written', existsSync(join(home, 'kicad-tool.json')))
 const stored = JSON.parse(readFileSync(join(home, 'kicad-tool.json'), 'utf8'))
 check('stored paths match', stored.kicadToolsDir === kctDir, JSON.stringify(stored))
 check('state reflects the new path', saved.json.config.kicadToolsDir === kctDir)
+check('version defaults to the pinned release', saved.json.config.kicadToolsVersion === '0.23.0', String(saved.json.config.kicadToolsVersion))
+
+const badVersion = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsVersion: 'latest' })
+check('a non-version string is rejected', badVersion.status === 400 && /must look like/.test(badVersion.text), badVersion.text)
+
+const versioned = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsVersion: '0.24.0' })
+check('a version can be pinned', versioned.status === 200 && versioned.json.config.kicadToolsVersion === '0.24.0', versioned.text)
 check('no kicanvas path is exposed', !('kicanvasDir' in saved.json.config))
 check('the fresh path is not installed', saved.json.repos['kicad-tools'].installed === false, JSON.stringify(saved.json.repos['kicad-tools']))
 
@@ -131,15 +138,16 @@ check('kicanvas is no longer a managed target', canvasTarget.status === 409, can
 
 /* ---------- purge safety ---------- */
 
-// A directory at the configured path that is NOT the expected repository must survive.
+// A directory at the configured path that is NOT our venv must survive.
 mkdirSync(kctDir, { recursive: true })
-writeFileSync(join(kctDir, 'pyproject.toml'), 'name = "something-else"')
+writeFileSync(join(kctDir, 'leftover.txt'), 'keep me')
 const purged = await request('POST', '/plugin/kicad-tool/purge')
 check('purge answers', purged.status === 200, purged.text)
-check('purge leaves foreign directories alone', purged.json.removed.length === 0 && existsSync(join(kctDir, 'pyproject.toml')), JSON.stringify(purged.json))
+check('purge leaves foreign directories alone', purged.json.removed.length === 0 && existsSync(join(kctDir, 'leftover.txt')), JSON.stringify(purged.json))
 
-// A directory that does look like the repository is removed.
-writeFileSync(join(kctDir, 'pyproject.toml'), 'name = "kicad-tools"')
+// A directory that does hold our CLI is removed.
+mkdirSync(join(kctDir, '.venv', 'bin'), { recursive: true })
+writeFileSync(join(kctDir, '.venv', 'bin', 'kct'), '#!/bin/sh\n')
 const removed = await request('POST', '/plugin/kicad-tool/purge')
 check('purge removes the managed checkout', removed.json.removed.includes(kctDir), JSON.stringify(removed.json))
 check('purge deletes it from disk', !existsSync(kctDir))

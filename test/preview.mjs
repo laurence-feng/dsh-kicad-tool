@@ -94,6 +94,13 @@ if (existsSync(`${boardDir}/ezIOC_Board.kicad_sch`)) {
   check('hierarchical project exposes every sheet', sources > 5, `${sources} sources`)
   const sheet = await get(new URL(big.url).origin, `/proj/${encodeDir(boardDir)}/SFP.kicad_sch`)
   check('sibling sheets are fetchable', sheet.status === 200 && sheet.body.includes('kicad_sch'))
+  check('schematic preview does not expose the board', !page.body.includes('.kicad_pcb'))
+
+  // A board preview must not expose schematics either: KiCanvas turns the board into a project
+  // page, and its "no root schematic" fallback would otherwise pick the board for sheet previews.
+  const pcb = await tools.get('kicad_preview').execute({ path: `${boardDir}/ezIOC_Board.kicad_pcb` }, exec)
+  const pcbPage = await get(new URL(pcb.url).origin, new URL(pcb.url).pathname + '?view=1')
+  check('board preview does not expose schematics', !pcbPage.body.includes('.kicad_sch'))
 }
 
 /* ---------- tool guards ---------- */

@@ -81,6 +81,10 @@ preview URL on the GUI's port would only work in an external browser.
 | `/kicanvas.js` | the local KiCanvas bundle |
 | `/status` | JSON: is the bundle built, and where |
 
+Siblings are exposed **per kind**: a schematic preview lists only `.kicad_sch`/`.kicad_pro`, a board
+preview only `.kicad_pcb`. KiCanvas turns a board into a project page too, and its fallback for "no
+root schematic" is the first page — exposing both kinds makes every schematic preview open the board.
+
 `<dir-token>` is the base64url of the project directory. The URL must end in the real file name:
 KiCanvas takes a document's name from the URL basename, and a query-string route makes it see a
 file called `file`, which fails with `No vaild root schematic was found`. The viewer also emits one

@@ -76,6 +76,10 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 | `/kicanvas.js` | 本地构建的 KiCanvas 包 |
 | `/status` | JSON：包是否已构建、路径在哪 |
 
+同级文件**按类型隔离**：预览原理图时只列 `.kicad_sch`/`.kicad_pro`，预览 PCB 时只列 `.kicad_pcb`。
+KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」时的兜底是第一页——两类混在一起，
+预览任何原理图都会打开 PCB。
+
 `<目录 token>` 是工程目录的 base64url。URL 必须以真实文件名结尾：KiCanvas 用 URL 的 basename
 当文档名，查询串路由会让它看到一个叫 `file` 的文件，报 `No vaild root schematic was found`。
 查看页会给每个同级 `.kicad_sch`/`.kicad_pcb` 生成一个 `<kicanvas-source>`，层级工程因此能解析子图。

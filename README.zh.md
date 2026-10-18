@@ -63,6 +63,13 @@ dsh plugin --profile desktop add /path/to/dsh-kicad-tool
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
 ```
 
+## 自动打开
+
+工具结果里带 URL，包里另外带一个客户端半（`client.js`）：它保持一条到 `/plugin/kicad-tool/events`
+的 Server-Sent-Events 长连接，收到宿主推送的预览地址就调用
+`ctx.sidebarRight.openTab('browser', { params: { url } })`。所以 `kicad_preview` 会自己弹出内置浏览器
+标签；若 profile 没有 Sidebar browser 服务，URL 仍在工具结果里，可以手动打开。
+
 ## 预览路由
 
 `kicad_preview` 会**在随机端口上单独起一个回环监听**（首次调用时惰性启动，插件卸载时关闭），

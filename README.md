@@ -67,6 +67,14 @@ Examples the model can issue:
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
 ```
 
+## Automatic opening
+
+The tool result carries the URL, and the package also ships a small Client half (`client.js`): it
+keeps one Server-Sent-Events stream to `/plugin/kicad-tool/events` and calls
+`ctx.sidebarRight.openTab('browser', { params: { url } })` for every preview the Host pushes. So a
+`kicad_preview` call opens the in-app Sidebar browser by itself. Without the Sidebar browser service
+the URL is still in the tool result, so it can be opened manually.
+
 ## Preview routes
 
 `kicad_preview` starts a **dedicated loopback listener on an ephemeral port** (lazily, on first

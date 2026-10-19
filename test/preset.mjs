@@ -34,6 +34,12 @@ check('preset is ordered after the shipped modes', /^\s+order:\s*6\s*$/m.test(pa
 check('preset mounts the tools subpath', /name:\s*dsh-kicad-tool\/tools\b/.test(patch))
 check('tools default to read-only', /allowMutating:\s*false/.test(patch))
 check('preset carries the full workbench', ['tool-fs', 'tool-bash', 'tool-web', 'plan-mode', 'tool-subagent'].every((id) => patch.includes(`id: ${id}`)))
+const promptVariables = [...patch.matchAll(/\{\{([^}]+)\}\}/g)].map((match) => match[1].trim())
+check(
+  'persona templates use only registered variables',
+  promptVariables.every((name) => name === 'provider' || name === 'model'),
+  promptVariables.join(', ') || 'none',
+)
 
 check('tools module exists', existsSync(new URL('../lib/tools.js', import.meta.url)))
 check('preview bus module exists', existsSync(new URL('../lib/preview-bus.js', import.meta.url)))

@@ -37,7 +37,8 @@
                 - 视觉确认：涉及布局、走线、丝印或封装时，用 kicad_preview 打开 KiCanvas 预览，而不是只读文字。
                 - 写设计前先说明：kicad_run 中会修改 KiCad 文件的命令默认被拦截；需要写操作时先解释要改什么、为什么，再由用户在插件详情页（插件 → dsh-kicad-tool）打开 allowMutating。
                 - 结论要落到证据：报告 DRC/ERC 时给出具体规则、坐标或网络和文件路径；不要用「看起来没问题」代替检查结果。
-              suffix: 当前工作目录是 {{cwd}}。
+              # No suffix template: persona templates resolve only registered variables
+              # (provider, model). The runtime context already carries the working directory.
           - id: kicad-tools
             name: dsh-kicad-tool/tools
             config:

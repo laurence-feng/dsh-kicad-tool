@@ -5,7 +5,7 @@
 接进会话：检查原理图与 PCB、跑 DRC/ERC、生成 BOM，以及驱动会改设计文件的命令。
 
 安装后，新建会话的模式选择器里会出现「**KiCad 助手**」。只有选中这个模式的会话才拿得到
-`kicad_*` 工具；其它模式不受影响。设置页（**设置 → KiCad 工具**）和 KiCanvas 预览仍全局可用。
+`kicad_*` 工具；其它模式不受影响。插件详情页（**插件 → dsh-kicad-tool**）和 KiCanvas 预览仍全局可用。
 
 `kicad-tools` 不需要运行中的 KiCad，输出是机器可读的 JSON，正好适合 agent：插件只负责找到 `kct`
 并把结构化参数传进去。
@@ -23,7 +23,7 @@
 ## 依赖
 
 - Node.js ≥ 18（Harness 宿主）。
-- `uv`（Python 侧）。会实时检测并显示在设置页上，缺失时直接报错并给安装命令，不会卡住。
+- `uv`（Python 侧）。会实时检测并显示在插件详情页上，缺失时直接报错并给安装命令，不会卡住。
   不再需要 `git`。
 
 查看器是**内置**的：`assets/kicanvas.js`（MIT）随插件发布，离线可用、不需要构建步骤。
@@ -39,7 +39,7 @@ dsh plugin --profile desktop add github:laurence-feng/dsh-kicad-tool
 dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
-然后在 **插件** 页确认 `dsh-kicad-tool` 已启用，再打开 **设置 → KiCad 工具**，点一次 **安装**。
+然后在 **插件** 页确认 `dsh-kicad-tool` 已启用，再打开 **插件 → dsh-kicad-tool** 详情页，点一次 **安装**。
 默认根目录：
 
 ```text
@@ -136,7 +136,7 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 
 ## 配置
 
-设置保存在 `<dshHome>/kicad-tool.json`，由设置页编辑；bundle 里的 `cordis.patch.yml` 只作为
+设置保存在 `<dshHome>/kicad-tool.json`，由插件详情页编辑；bundle 里的 `cordis.patch.yml` 只作为
 组合期默认值：
 
 | 键 | 默认 | 含义 |
@@ -148,14 +148,14 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 | `maxOutputChars` | `100000` | 单流输出截断阈值（超出部分不解析为 JSON） |
 | `allowMutating` | `false` | 允许写 KiCad 文件的命令 |
 
-日常只需要用设置页改 `allowMutating` 和安装路径。`timeoutMs`/`maxOutputChars` 是组合期常量，
+日常只需要用插件详情页改 `allowMutating` 和安装路径。`timeoutMs`/`maxOutputChars` 是组合期常量，
 要改得覆盖整个 `preset-kicad` 声明；升级插件会重置它。
 
 ### 为什么默认禁止写
 
 `kicad_run` 接受任意 `kct` argv。`pcb remove-footprint`、`route`、`fix-drc`、`zones`、`render`、
 `export` 之类的命令会改文件或生成文件，而插件是直接 `spawn` 子进程、不经过 Harness 的文件沙箱。
-所以默认是一张只读子命令白名单，其他（包括未知命令）都需要在设置页打开 `allowMutating`。
+所以默认是一张只读子命令白名单，其他（包括未知命令）都需要在插件详情页打开 `allowMutating`。
 
 ## 安全说明
 
@@ -167,18 +167,18 @@ KiCanvas 会把 PCB 也当成一个 project page，而它「找不到根图」�
 
 ```text
 dsh-kicad-tool (bundle)
-├─ host 半  lib/index.js      设置页后端 + 预览 SSE，不注册任何 agent 工具
+├─ host 半  lib/index.js      设置后端 + 预览 SSE，不注册任何 agent 工具
 └─ preset  half  lib/tools.js  kicad_* 工具 + 工作流提示（行名 dsh-kicad-tool/tools）
    └─ 挂在 cordis.patch.yml 的 preset-kicad（id: kicad, order: 6）里
 ```
 
-- **host 半**注册 profile 级的东西（`/plugin/kicad-tool/*`、SSE、设置页），所以任何模式都能用
-  设置页；它不注册工具，因此不会把 kicad 工具泄漏到 standard/其它模式。
+- **host 半**注册 profile 级的东西（`/plugin/kicad-tool/*`、SSE、设置后端），所以设置接口对
+  所有模式可用；它不注册工具，因此不会把 kicad 工具泄漏到 standard/其它模式。
 - **preset 半**只在选中「KiCad 助手」的 Agent scope 里挂载，工具注册表、提示词 section 都是
   scope 内的。
 - 两半通过 `lib/preview-bus.js` 的进程级总线通信；总线键在 `globalThis` 上，即使包被解析成
   两份模块也能共享。
-- 浏览器半 `client.js` 由 bundle 的 `dsh.client` 声明加载，负责设置页和自动打开预览。
+- 浏览器半 `client.js` 由 bundle 的 `dsh.client` 声明加载，负责插件详情页的设置卡片和自动打开预览。
 
 ## 开发
 

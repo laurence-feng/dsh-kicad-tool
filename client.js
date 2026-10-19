@@ -6,11 +6,12 @@
  * 1. **Auto-open.** The Host produces preview URLs; only the Client can open a Sidebar tab. One
  *    Server-Sent-Events stream to `/plugin/kicad-tool/events` delivers them, and each is opened in
  *    the in-app browser.
- * 2. **Settings page.** A `settings.section` that edits the install path and version and drives
- *    install / update / reinstall / remove for the managed kicad-tools venv. The backend is this plugin's
- *    own routes (`/plugin/kicad-tool/state|config|action|purge`); the Settings wire only serves a
- *    hard-coded namespace allowlist. The page is profile-wide, while the kicad_* tools themselves
- *    are mounted by the「KiCad 助手」agent preset.
+ * 2. **Bundle settings.** A `plugins.bundle.config` entry (keyed by the bundle package name) that
+ *    edits the install path and version and drives install / update / reinstall / remove for the
+ *    managed kicad-tools venv. It renders on the bundle's own page under Plugins → dsh-kicad-tool.
+ *    The backend is this plugin's own routes (`/plugin/kicad-tool/state|config|action|purge`); the
+ *    Settings wire only serves a hard-coded namespace allowlist. The kicad_* tools themselves are
+ *    mounted by the「KiCad 助手」agent preset.
  *
  * Bundle shape: `window.__ModuleLoader__.load({ id, factory })` with a lazy CJS factory whose
  * `require` resolves against the shell's frozen module table.
@@ -56,7 +57,7 @@ window.__ModuleLoader__.load({
       return false
     }
 
-    /* ---------------- settings page ---------------- */
+    /* ---------------- bundle settings page ---------------- */
 
     var cardStyle = {
       margin: '4px 16px 16px',
@@ -237,7 +238,7 @@ window.__ModuleLoader__.load({
           'div',
           { style: cardStyle },
           React.createElement('div', { style: titleStyle }, '安装路径'),
-          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。kicad_* 工具在新建会话选择「KiCad 助手」模式后可用；KiCanvas 已内置在插件里，不需要配置路径。'),
+          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。本页在「插件 → dsh-kicad-tool」详情页；kicad_* 工具在新建会话选择「KiCad 助手」模式后可用；KiCanvas 已内置在插件里，不需要配置路径。'),
           React.createElement(
             'div',
             { style: rowStyle },
@@ -329,7 +330,7 @@ window.__ModuleLoader__.load({
 
     /* ---------------- plugin entry ---------------- */
 
-    /** Subscribe to Host preview pushes and register the Settings page. */
+    /** Subscribe to Host preview pushes and register the bundle's settings entry. */
     function apply(ctx) {
       var disposers = []
 
@@ -354,10 +355,18 @@ window.__ModuleLoader__.load({
       }
 
       if (ctx.slots && typeof ctx.slots.inject === 'function') {
-        ctx.slots.inject('settings.section', function () {
+        // Bundle-owned configuration lives on the bundle's own page (Plugins → dsh-kicad-tool),
+        // between its description and its rows — not in the global Settings list. `view: 'page'`
+        // gets the full form; `summary` is used by other surfaces and stays a one-liner.
+        ctx.slots.inject('plugins.bundle.config', function () {
           return ctx.slots.register(
-            { name: 'settings.section', id: 'kicad-tool', order: 110, label: function () { return 'KiCad 工具' } },
-            KicadToolSection,
+            { name: 'plugins.bundle.config', key: 'dsh-kicad-tool' },
+            function (props) {
+              if (props && props.view === 'summary') {
+                return 'kicad-tools 安装位置、版本、日志与清理'
+              }
+              return React.createElement(KicadToolSection, props)
+            },
           )
         })
       }

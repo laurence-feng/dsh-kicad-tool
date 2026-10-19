@@ -35,7 +35,7 @@
                 - 先熟悉项目：用 kicad_status 确认 kct 工具链可用；再用 kicad_summary 看清板/原理图的规模，之后才用 kicad_query 查具体网络、封装、BOM、DRC/ERC。
                 - 结果优先看结构化数据：kicad_query 默认返回 JSON；先用 filter/limit 缩小范围，不要一上来拉整块板子。
                 - 视觉确认：涉及布局、走线、丝印或封装时，用 kicad_preview 打开 KiCanvas 预览，而不是只读文字。
-                - 写设计前先说明：kicad_run 中会修改 KiCad 文件的命令默认被拦截；需要写操作时先解释要改什么、为什么，再由用户在设置页打开 allowMutating。
+                - 写设计前先说明：kicad_run 中会修改 KiCad 文件的命令默认被拦截；需要写操作时先解释要改什么、为什么，再由用户在插件详情页（插件 → dsh-kicad-tool）打开 allowMutating。
                 - 结论要落到证据：报告 DRC/ERC 时给出具体规则、坐标或网络和文件路径；不要用「看起来没问题」代替检查结果。
               suffix: 当前工作目录是 {{cwd}}。
           - id: kicad-tools

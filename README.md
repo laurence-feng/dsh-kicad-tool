@@ -6,8 +6,8 @@ that plugs the standalone Python toolkit
 schematics and boards, run DRC/ERC, generate BOMs, and drive the design-writing commands.
 
 Once installed, new sessions offer **「KiCad 助手」** in the mode picker. Only sessions that select
-this mode get the `kicad_*` tools; every other mode is unaffected. The Settings page
-(**Settings → KiCad 工具**) and the KiCanvas preview stay global.
+this mode get the `kicad_*` tools; every other mode is unaffected. The bundle's settings page
+(**Plugins → dsh-kicad-tool**) and the KiCanvas preview stay global.
 
 `kicad-tools` needs no running KiCad instance and emits machine-readable JSON, which makes it a good
 fit for an agent: the plugin only has to find `kct` and pass structured arguments through.
@@ -25,7 +25,7 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 ## Requirements
 
 - Node.js ≥ 18 (the Harness host).
-- `uv` for the Python CLI. It is checked live and reported on the settings page; a missing command
+- `uv` for the Python CLI. It is checked live and reported on the bundle's settings page; a missing command
   fails the action with an install hint instead of hanging. `git` is not needed.
 
 The viewer is **vendored**: `assets/kicanvas.js` (MIT) ships inside the plugin, so previews work
@@ -42,7 +42,7 @@ dsh plugin --profile desktop add dsh-kicad-tool
 ```
 
 Then confirm `dsh-kicad-tool` is enabled on the **Plugins** page and open
-**Settings → KiCad 工具** to press **安装** once. The default root is:
+**Plugins → dsh-kicad-tool** to press **安装** once. The default root is:
 
 ```text
 ~/.local/share/dsh-kicad-tool/kicad-tools   .venv with kicad-tools from PyPI (~50 MB)
@@ -147,8 +147,9 @@ instead of a stack trace.
 
 ## Configuration
 
-Settings live in `<dshHome>/kicad-tool.json` and are edited in the Settings page. Values in the
-bundle's `cordis.patch.yml` act as composition-time defaults only:
+Settings live in `<dshHome>/kicad-tool.json` and are edited on the bundle's settings page
+(Plugins → dsh-kicad-tool). Values in the bundle's `cordis.patch.yml` act as composition-time
+defaults only:
 
 | key | default | meaning |
 |---|---|---|
@@ -159,7 +160,7 @@ bundle's `cordis.patch.yml` act as composition-time defaults only:
 | `maxOutputChars` | `100000` | per-stream output cap before truncation (JSON past the cap is not parsed) |
 | `allowMutating` | `false` | enable commands that write to KiCad files |
 
-Day to day, use the Settings page for the install path and `allowMutating`. `timeoutMs` and
+Day to day, use the bundle's settings page for the install path and `allowMutating`. `timeoutMs` and
 `maxOutputChars` are composition-time constants: changing them means overriding the whole
 `preset-kicad` declaration, and upgrading the plugin resets them.
 
@@ -168,8 +169,8 @@ Day to day, use the Settings page for the install path and `allowMutating`. `tim
 `kicad_run` accepts an arbitrary `kct` argv. Commands such as `pcb remove-footprint`, `route`,
 `fix-drc`, `zones`, `render` or `export` modify or create files, and the plugin cannot rely on the
 Harness file sandbox — it spawns `kct` directly. The default is an allowlist of read-only
-subcommands; anything else (including unknown commands) requires `allowMutating` from the Settings
-page.
+subcommands; anything else (including unknown commands) requires `allowMutating` from the bundle's
+settings page.
 
 ## Security notes
 
@@ -187,15 +188,15 @@ dsh-kicad-tool (bundle)
    └─ mounted by cordis.patch.yml's preset-kicad (id: kicad, order: 6)
 ```
 
-- The **host half** owns profile-wide surfaces (`/plugin/kicad-tool/*`, SSE, the Settings page), so
-  the Settings page works in every mode. It registers no tools, so kicad tooling never leaks into
+- The **host half** owns profile-wide surfaces (`/plugin/kicad-tool/*`, SSE, the settings backend),
+  so the settings API works in every mode. It registers no tools, so kicad tooling never leaks into
   Standard or any other mode.
 - The **preset half** mounts only in the scope of an Agent that selected 「KiCad 助手」; tool
   registrations and the prompt section stay inside that scope.
 - The two halves talk over the process-wide bus in `lib/preview-bus.js`; its key lives on
   `globalThis`, so state is shared even if the package is resolved through two module graphs.
 - The browser half `client.js` is loaded through the bundle's `dsh.client` declaration and owns the
-  Settings page plus the auto-open behaviour.
+  bundle's settings card plus the auto-open behaviour.
 
 ## Development
 

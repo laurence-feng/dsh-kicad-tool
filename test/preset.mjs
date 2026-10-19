@@ -15,6 +15,7 @@ function check(label, ok, detail) {
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+const clientSource = readFileSync(new URL('../client.js', import.meta.url), 'utf8')
 
 check('package version is 0.8.x', /^0\.8\./.test(pkg.version), pkg.version)
 check('package exports the tools entry', pkg.exports['./tools'] === './lib/tools.js', String(pkg.exports['./tools']))
@@ -36,6 +37,12 @@ check('preset carries the full workbench', ['tool-fs', 'tool-bash', 'tool-web', 
 
 check('tools module exists', existsSync(new URL('../lib/tools.js', import.meta.url)))
 check('preview bus module exists', existsSync(new URL('../lib/preview-bus.js', import.meta.url)))
+
+check(
+  'settings live on the bundle page',
+  clientSource.includes("'plugins.bundle.config'") && clientSource.includes("key: 'dsh-kicad-tool'"),
+)
+check('no leftover Settings section registration', !clientSource.includes('settings.section'))
 
 /* ---------- the Host half registers no agent tools ---------- */
 

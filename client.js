@@ -215,7 +215,7 @@ window.__ModuleLoader__.load({
         try {
           var result = await call(PURGE_PATH, { method: 'POST' })
           setNotice(
-            '已删除：' + (result.removed.length ? result.removed.join('、') : '（无目录）') + '；卸载命令：' + result.uninstallCommand,
+            '已删除：' + (result.removed.length ? result.removed.join('、') : '（无目录）') + '；插件本身未卸载。',
           )
           refresh()
         } catch (failure) {
@@ -316,14 +316,14 @@ window.__ModuleLoader__.load({
         React.createElement(
           'div',
           { style: cardStyle },
-          React.createElement('div', { style: titleStyle }, '卸载'),
-          React.createElement('div', { style: subStyle }, '先删除受管的安装目录，再执行卸载命令并重启：'),
+          React.createElement('div', { style: titleStyle }, '清理工具链数据'),
+          React.createElement('div', { style: subStyle }, '只删除受管的 kicad-tools 安装目录，不卸载插件。卸载插件请用本页顶部的卸载操作；命令行卸载（可选）：'),
           React.createElement(
             'div',
             { style: { ...subStyle, fontFamily: 'ui-monospace, monospace', wordBreak: 'break-all' } },
             state.uninstallCommand || '',
           ),
-          React.createElement('button', { style: dangerStyle, disabled: busy, onClick: purge }, '删除数据并卸载'),
+          React.createElement('button', { style: dangerStyle, disabled: busy, onClick: purge }, '删除工具链数据'),
         ),
       )
     }

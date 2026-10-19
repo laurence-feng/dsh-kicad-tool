@@ -6,10 +6,11 @@
  * 1. **Auto-open.** The Host produces preview URLs; only the Client can open a Sidebar tab. One
  *    Server-Sent-Events stream to `/plugin/kicad-tool/events` delivers them, and each is opened in
  *    the in-app browser.
- * 2. **Settings page.** A `settings.section` that edits the two install paths and drives
- *    install / update / reinstall / remove for the managed checkouts. The backend is this plugin's
+ * 2. **Settings page.** A `settings.section` that edits the install path and version and drives
+ *    install / update / reinstall / remove for the managed kicad-tools venv. The backend is this plugin's
  *    own routes (`/plugin/kicad-tool/state|config|action|purge`); the Settings wire only serves a
- *    hard-coded namespace allowlist.
+ *    hard-coded namespace allowlist. The page is profile-wide, while the kicad_* tools themselves
+ *    are mounted by the「KiCad 助手」agent preset.
  *
  * Bundle shape: `window.__ModuleLoader__.load({ id, factory })` with a lazy CJS factory whose
  * `require` resolves against the shell's frozen module table.
@@ -207,7 +208,7 @@ window.__ModuleLoader__.load({
       }
 
       async function purge() {
-        if (!window.confirm('删除两个安装目录？此操作不可撤销。')) return
+        if (!window.confirm('删除受管的安装目录？此操作不可撤销。')) return
         setNotice('')
         setError('')
         try {
@@ -236,7 +237,7 @@ window.__ModuleLoader__.load({
           'div',
           { style: cardStyle },
           React.createElement('div', { style: titleStyle }, '安装路径'),
-          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。KiCanvas 已内置在插件里，不需要配置路径。'),
+          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。kicad_* 工具在新建会话选择「KiCad 助手」模式后可用；KiCanvas 已内置在插件里，不需要配置路径。'),
           React.createElement(
             'div',
             { style: rowStyle },
@@ -315,7 +316,7 @@ window.__ModuleLoader__.load({
           'div',
           { style: cardStyle },
           React.createElement('div', { style: titleStyle }, '卸载'),
-          React.createElement('div', { style: subStyle }, '先删除两个安装目录，再执行卸载命令并重启：'),
+          React.createElement('div', { style: subStyle }, '先删除受管的安装目录，再执行卸载命令并重启：'),
           React.createElement(
             'div',
             { style: { ...subStyle, fontFamily: 'ui-monospace, monospace', wordBreak: 'break-all' } },

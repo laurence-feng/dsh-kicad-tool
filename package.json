@@ -1,12 +1,13 @@
 {
   "name": "dsh-kicad-tool",
-  "version": "0.7.1",
-  "description": "KiCad tooling for DeepSeek Harness: exposes the kct CLI (kicad-tools) as agent tools for schematic/PCB inspection, DRC/ERC, BOM and authoring workflows.",
+  "version": "0.8.0",
+  "description": "KiCad mode for DeepSeek Harness: the KiCad 助手 agent preset with kct (kicad-tools) tools for schematic/PCB inspection, DRC/ERC, BOM and authoring, plus a global Settings page and KiCanvas preview.",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./tools": "./lib/tools.js",
     "./client": "./client.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
@@ -32,12 +33,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test/smoke.mjs && node test/contract.mjs && node test/preview.mjs && node test/events.mjs && node test/settings.mjs",
+    "test": "node test/smoke.mjs && node test/contract.mjs && node test/preview.mjs && node test/events.mjs && node test/settings.mjs && node test/preset.mjs",
     "test:smoke": "node test/smoke.mjs",
     "test:contract": "node test/contract.mjs",
     "test:preview": "node test/preview.mjs",
     "test:events": "node test/events.mjs",
     "test:settings": "node test/settings.mjs",
+    "test:preset": "node test/preset.mjs",
     "vendor:kicanvas": "node scripts/vendor-kicanvas.mjs"
   },
   "engines": {
@@ -48,6 +50,8 @@
     "dsh",
     "cordis",
     "plugin",
+    "agent-preset",
+    "mode",
     "kicad",
     "kicad-tools",
     "kct",

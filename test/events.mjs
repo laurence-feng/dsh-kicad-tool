@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os'
 import { createServer } from 'node:http'
 import { request as httpRequest } from 'node:http'
 import { join } from 'node:path'
-import { apply } from '../lib/index.js'
+import { apply as applyHost } from '../lib/index.js'
+import { apply as applyTools } from '../lib/tools.js'
 import { EVENTS_ROUTE } from '../lib/events.js'
 
 // Keep the settings file out of the user's real ~/.dsh.
@@ -41,17 +42,26 @@ const server = createServer((req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 const port = server.address().port
 
-/* ---------- mount plugin ---------- */
+/* ---------- mount both halves ---------- */
 
-const tools = new Map()
-apply(
+// Host half: Settings backend + SSE route. It registers no tools.
+applyHost(
   {
-    tools: { register: (definition) => (tools.set(definition.name, definition), () => {}) },
-    workingDirectory: { ensure: async () => process.cwd() },
     get: (name) => (name === 'webServer' ? webServer : undefined),
     effect: (factory) => factory(),
   },
-  { kicanvasDir: `${process.env.HOME}/.kicanvas` },
+  {},
+)
+
+// Preset half: the kicad_* tools, mounted the same way the `kicad` preset mounts them.
+const tools = new Map()
+applyTools(
+  {
+    tools: { register: (definition) => (tools.set(definition.name, definition), () => {}) },
+    workingDirectory: { ensure: async () => process.cwd() },
+    effect: (factory) => factory(),
+  },
+  {},
 )
 
 check('SSE route registered', routes.has(`exact:${EVENTS_ROUTE}`))

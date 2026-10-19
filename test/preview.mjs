@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { request as httpRequest } from 'node:http'
 import { basename, dirname, join } from 'node:path'
-import { apply } from '../lib/index.js'
+import { apply } from '../lib/tools.js'
 import { encodeDir } from '../lib/preview.js'
 
 // Keep the settings file out of the user's real ~/.dsh.

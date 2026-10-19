@@ -7,7 +7,7 @@
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { apply } from '../lib/index.js'
+import { apply } from '../lib/tools.js'
 
 // Keep the settings file out of the user's real ~/.dsh.
 process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'kicad-contract-'))

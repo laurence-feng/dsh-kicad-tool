@@ -1,6 +1,6 @@
 {
   "name": "dsh-kicad-tool",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "KiCad mode for DeepSeek Harness: the KiCad 助手 agent preset with kct (kicad-tools) tools for schematic/PCB inspection, DRC/ERC, BOM and authoring, plus a bundle settings page and KiCanvas preview.",
   "license": "MIT",
   "type": "module",

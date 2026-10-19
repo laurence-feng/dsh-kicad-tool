@@ -17,7 +17,7 @@
 | 原理图 / PCB 检查 | `kicad_status`、`kicad_summary`、`kicad_query`（`sch.*`、`pcb.*`、`symbols`、`nets`、`bom`、`drc`、`erc.parse` …） |
 | 设计与制造流程 | `kicad_run` 透传完整 `kct` argv：布线、修复、网表、渲染、导出；写命令默认拦截 |
 | 可视化 | `kicad_preview`：内置 KiCanvas，缩放/平移/看层/看符号属性，自动弹出内置浏览器标签 |
-| 工作台 | 文件读写、glob/grep、bash/pwsh、后台任务、定时任务、web 搜索/抓取、待办、计划模式、技能、上下文压缩、子代理/工作流 |
+| 工作台 | 文件读写、glob/grep、bash/pwsh、后台任务、定时任务、web 搜索/抓取、待办、计划模式、技能、上下文压缩（不含子代理/工作流与文档交付工具） |
 | 人设与工作流 | KiCad 硬件设计助手 + 「先 status → 再 summary/query → 视觉确认 → 改前说明 → 复跑 DRC/ERC」的方法论 |
 
 ## 依赖

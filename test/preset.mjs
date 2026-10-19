@@ -33,7 +33,9 @@ check('preset display name is KiCad 助手', /^\s+name:\s*KiCad 助手\s*$/m.tes
 check('preset is ordered after the shipped modes', /^\s+order:\s*6\s*$/m.test(patch))
 check('preset mounts the tools subpath', /name:\s*dsh-kicad-tool\/tools\b/.test(patch))
 check('tools default to read-only', /allowMutating:\s*false/.test(patch))
-check('preset carries the full workbench', ['tool-fs', 'tool-bash', 'tool-web', 'plan-mode', 'tool-subagent'].every((id) => patch.includes(`id: ${id}`)))
+check('preset carries the workbench it needs', ['tool-fs', 'tool-bash', 'tool-web', 'plan-mode', 'tool-todo'].every((id) => patch.includes(`id: ${id}`)))
+check('no subagent or workflow tools in this mode', ['delegation', 'tool-subagent', 'tool-workflow', 'workflow-ptc'].every((id) => !patch.includes(`id: ${id}`)))
+check('no document delivery tool in this mode', !patch.includes('id: present'))
 const promptVariables = [...patch.matchAll(/\{\{([^}]+)\}\}/g)].map((match) => match[1].trim())
 check(
   'persona templates use only registered variables',

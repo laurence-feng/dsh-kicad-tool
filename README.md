@@ -19,7 +19,7 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 | Schematic / PCB inspection | `kicad_status`, `kicad_summary`, `kicad_query` (`sch.*`, `pcb.*`, `symbols`, `nets`, `bom`, `drc`, `erc.parse`, …) |
 | Design and fabrication flow | `kicad_run` passes a full `kct` argv through — routing, fixing, netlists, renders, exports; writes are blocked by default |
 | Visual review | `kicad_preview`: vendored KiCanvas with zoom/pan/layers/symbol details; opens the in-app browser tab automatically |
-| Workbench | file read/write, glob/grep, bash/pwsh, background jobs, schedules, web search/fetch, todo, plan mode, skills, compaction, subagents/workflows |
+| Workbench | file read/write, glob/grep, bash/pwsh, background jobs, schedules, web search/fetch, todo, plan mode, skills, compaction (no subagent/workflow or document-delivery tools) |
 | Persona and method | KiCad hardware assistant + a 「status → summary/query → visual check → explain before writing → re-run DRC/ERC」 working agreement |
 
 ## Requirements

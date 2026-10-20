@@ -1,6 +1,0 @@
-upstream: https://github.com/theacodes/kicanvas
-commit: b031159eb74aaa7eef2b026fd85d35bc05ff2095
-commit_date: 2026-04-29
-bundle: assets/kicanvas.js
-built_with: npm ci && npm run build (esbuild, minified)
-note: rebuilt by scripts/vendor-kicanvas.mjs

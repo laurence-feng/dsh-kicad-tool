@@ -3,8 +3,8 @@
 # Two rows, one bundle:
 #
 # - `dsh-kicad-tool` (Host half) owns the profile-wide surfaces: the Settings → KiCad 工具
-#   backend that installs/updates the managed kct venv, and the preview SSE route the browser
-#   half listens on. It registers no agent tools, so the bundle does not pollute other modes.
+#   backend that installs/updates the managed kct venv. It registers no agent tools, so the
+#   bundle does not pollute other modes.
 #
 # - `preset-kicad` declares the「KiCad 助手」agent preset. Selecting it for a new session mounts
 #   the kicad_* tools (as `dsh-kicad-tool/tools`) plus the workbench they need. Preset plugins
@@ -21,7 +21,7 @@
       config:
         id: kicad
         name: KiCad 助手
-        description: 原理图/PCB 检查、DRC/ERC、BOM 与 KiCanvas 预览的 KiCad 硬件设计助手
+        description: 原理图/PCB 检查、DRC/ERC、BOM 的 KiCad 硬件设计助手
         order: 6
         plugins:
           - id: persona
@@ -34,7 +34,6 @@
                 工作方法：
                 - 先熟悉项目：用 kicad_status 确认 kct 工具链可用；再用 kicad_summary 看清板/原理图的规模，之后才用 kicad_query 查具体网络、封装、BOM、DRC/ERC。
                 - 结果优先看结构化数据：kicad_query 默认返回 JSON；先用 filter/limit 缩小范围，不要一上来拉整块板子。
-                - 视觉确认：涉及布局、走线、丝印或封装时，用 kicad_preview 打开 KiCanvas 预览，而不是只读文字。
                 - 写设计前先说明：kicad_run 中会修改 KiCad 文件的命令默认被拦截；需要写操作时先解释要改什么、为什么，再由用户在插件详情页（插件 → dsh-kicad-tool）打开 allowMutating。
                 - 结论要落到证据：报告 DRC/ERC 时给出具体规则、坐标或网络和文件路径；不要用「看起来没问题」代替检查结果。
               # No suffix template: persona templates resolve only registered variables
@@ -85,7 +84,7 @@
                   section: |
                     You are in plan mode. Stay in plan mode until the user approves your plan through exit_plan_mode or switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
 
-                    Explore first. Use non-mutating reads, searches, kicad_status/kicad_summary/kicad_query, and previews to ground the plan in the actual design. Do not edit or write files, change configuration, or otherwise carry out the plan.
+                    Explore first. Use non-mutating reads, searches, kicad_status/kicad_summary/kicad_query to ground the plan in the actual design. Do not edit or write files, change configuration, or otherwise carry out the plan.
 
                     The tool catalog stays the same across modes for request-cache stability. These plan-mode rules override any later tool description or guidance that suggests using mutation tools; those tools remain listed to keep the tool catalog unchanged. Do not use todo_write to track this planning phase: it tracks implementation after an approved plan, while the plan itself belongs in exit_plan_mode.
 

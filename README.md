@@ -7,7 +7,7 @@ schematics and boards, run DRC/ERC, generate BOMs, and drive the design-writing 
 
 Once installed, new sessions offer **「KiCad 助手」** in the mode picker. Only sessions that select
 this mode get the `kicad_*` tools; every other mode is unaffected. The bundle's settings page
-(**Plugins → dsh-kicad-tool**) and the KiCanvas preview stay global.
+(**Plugins → dsh-kicad-tool**) stays global.
 
 `kicad-tools` needs no running KiCad instance and emits machine-readable JSON, which makes it a good
 fit for an agent: the plugin only has to find `kct` and pass structured arguments through.
@@ -18,9 +18,8 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 |---|---|
 | Schematic / PCB inspection | `kicad_status`, `kicad_summary`, `kicad_query` (`sch.*`, `pcb.*`, `symbols`, `nets`, `bom`, `drc`, `erc.parse`, …) |
 | Design and fabrication flow | `kicad_run` passes a full `kct` argv through — routing, fixing, netlists, renders, exports; writes are blocked by default |
-| Visual review | `kicad_preview`: vendored KiCanvas with zoom/pan/layers/symbol details; opens the in-app browser tab automatically |
 | Workbench | file read/write, glob/grep, bash/pwsh, background jobs, schedules, web search/fetch, todo, plan mode, skills, compaction (no subagent/workflow or document-delivery tools) |
-| Persona and method | KiCad hardware assistant + a 「status → summary/query → visual check → explain before writing → re-run DRC/ERC」 working agreement |
+| Persona and method | KiCad hardware assistant + a 「status → summary/query → explain before writing → re-run DRC/ERC」 working agreement |
 
 ## Requirements
 
@@ -28,8 +27,7 @@ fit for an agent: the plugin only has to find `kct` and pass structured argument
 - `uv` for the Python CLI. It is checked live and reported on the bundle's settings page; a missing command
   fails the action with an install hint instead of hanging. `git` is not needed.
 
-The viewer is **vendored**: `assets/kicanvas.js` (MIT) ships inside the plugin, so previews work
-offline with no build step. Only the Python toolchain is installed at runtime.
+Only the Python toolchain is installed at runtime.
 
 ## Install and enable
 
@@ -53,19 +51,11 @@ upstream checkout is ~440 MB, mostly example boards and test fixtures, none of w
 Change the version field and press **更新** to move to another release.
 
 The path is editable in the page and applies immediately (no restart). The page also offers
-**更新 / 重新安装 / 删除**, a dependency readout (`uv`, plus "KiCanvas 内置"), the last operation log,
+**更新 / 重新安装 / 删除**, a dependency readout (`uv`), the last operation log,
 and **删除数据并卸载** — which deletes the venv and prints the exact `dsh plugin ... remove` command
 (the Host cannot uninstall its own package).
 
 After that, create a new session and pick **「KiCad 助手」** in the mode picker.
-
-KiCanvas is not managed by the page; upgrading it is a plugin release. To rebuild the vendored
-bundle from a pinned upstream commit:
-
-```bash
-npm run vendor:kicanvas                     # uses assets/KICANVAS-VERSION's pin
-npm run vendor:kicanvas -- <commit>         # try another commit
-```
 
 ## Tools
 
@@ -75,7 +65,6 @@ npm run vendor:kicanvas -- <commit>         # try another commit
 | `kicad_summary` | JSON summary of one `.kicad_pcb` (layers, footprints, nets, traces) or `.kicad_sch` (symbols, nets). |
 | `kicad_query` | Read-only queries: `sch.*`, `pcb.*`, `symbols`, `nets`, `bom`, `check`, `drc`, `erc.parse`, … with `--format json` by default. Narrow at the source with `filter` (native `--filter`, on `sch.labels`, `sch.unconnected`, `sch.connections`, `pcb.footprints`, `pcb.nets`, `symbols`) or cap a JSON array with `limit`. |
 | `kicad_run` | Full `kct` argv pass-through (no shell) for everything else — routing, fixing, netlists, renders, exports. Design-writing commands are refused unless enabled. |
-| `kicad_preview` | Returns a browser URL that renders a KiCad file with KiCanvas: interactive schematic/PCB viewer with zoom, pan, layers and symbol details. |
 
 Examples the model can issue:
 
@@ -90,46 +79,6 @@ Examples the model can issue:
 // kicad_run
 { "args": ["sch", "summary", "design.kicad_sch", "--format", "json"] }
 ```
-
-## Automatic opening
-
-The tool result carries the URL, and the package also ships a small Client half (`client.js`): it
-keeps one Server-Sent-Events stream to `/plugin/kicad-tool/events` and calls
-`ctx.sidebarRight.openTab('browser', { params: { url } })` for every preview the Host pushes. So a
-`kicad_preview` call opens the in-app Sidebar browser by itself. Without the Sidebar browser service
-the URL is still in the tool result, so it can be opened manually.
-
-Preview URLs travel from the preset half (the tool) to the host half (the SSE route) over a
-process-wide bus (`lib/preview-bus.js`), so the two Cordis scopes never import each other.
-
-## Preview routes
-
-`kicad_preview` starts a **dedicated loopback listener on an ephemeral port** and returns a URL on
-it. The listener is process-wide: started lazily on first use, shared by every KiCad-mode session,
-and closed when the Harness process exits. It is deliberately not a route on the harness web server:
-the in-app browser refuses to open the DSH application's own origin, so a preview URL on the GUI's
-port would only work in an external browser.
-
-| Route | Purpose |
-|---|---|
-| `/proj/<dir-token>/<name>?view=1&controls=full\|basic\|none` | viewer page; also lists every sibling sheet as `<kicanvas-source>` |
-| `/proj/<dir-token>/<name>` | the KiCad file itself, served as `text/plain` |
-| `/kicanvas.js` | the local KiCanvas bundle |
-| `/status` | JSON: is the bundle built, and where |
-
-Siblings are exposed **per kind**: a schematic preview lists only `.kicad_sch`/`.kicad_pro`, a board
-preview only `.kicad_pcb`. KiCanvas turns a board into a project page too, and its fallback for "no
-root schematic" is the first page — exposing both kinds makes every schematic preview open the board.
-
-`<dir-token>` is the base64url of the project directory. The URL must end in the real file name:
-KiCanvas takes a document's name from the URL basename, and a query-string route makes it see a
-file called `file`, which fails with `No vaild root schematic was found`. The viewer also emits one
-`<kicanvas-source>` per sibling `.kicad_sch`/`.kicad_pcb`, so hierarchical projects resolve their
-sheets instead of loading a single orphaned page.
-
-Only KiCad extensions are ever served, names must be a single path segment inside the project
-directory, files are capped at 64 MB, and the listener answers loopback `Host` headers only — it
-cannot be used as a general-purpose file reader.
 
 ## Dynamic loading of the toolchain
 
@@ -183,25 +132,23 @@ settings page.
 
 ```text
 dsh-kicad-tool (bundle)
-├─ host half   lib/index.js   Settings backend + preview SSE; registers no agent tools
+├─ host half   lib/index.js   Settings backend; registers no agent tools
 └─ preset half lib/tools.js   kicad_* tools + method section (entry `dsh-kicad-tool/tools`)
    └─ mounted by cordis.patch.yml's preset-kicad (id: kicad, order: 6)
 ```
 
-- The **host half** owns profile-wide surfaces (`/plugin/kicad-tool/*`, SSE, the settings backend),
+- The **host half** owns profile-wide surfaces (`/plugin/kicad-tool/*`, the settings backend),
   so the settings API works in every mode. It registers no tools, so kicad tooling never leaks into
   Standard or any other mode.
 - The **preset half** mounts only in the scope of an Agent that selected 「KiCad 助手」; tool
   registrations and the prompt section stay inside that scope.
-- The two halves talk over the process-wide bus in `lib/preview-bus.js`; its key lives on
-  `globalThis`, so state is shared even if the package is resolved through two module graphs.
 - The browser half `client.js` is loaded through the bundle's `dsh.client` declaration and owns the
-  bundle's settings card plus the auto-open behaviour.
+  bundle's settings card.
 
 ## Development
 
 ```bash
-npm test                       # smoke + contract + preview + events + settings + preset
+npm test                       # smoke + contract + settings + preset
 ```
 
 The smoke test uses sample files from the kicad-tools checkout (`boards/00-simple-led`,

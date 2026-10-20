@@ -44,7 +44,6 @@ check(
 )
 
 check('tools module exists', existsSync(new URL('../lib/tools.js', import.meta.url)))
-check('preview bus module exists', existsSync(new URL('../lib/preview-bus.js', import.meta.url)))
 
 check(
   'settings live on the bundle page',
@@ -75,7 +74,7 @@ applyTools(
   },
   {},
 )
-check('preset half registers the kicad tools', ['kicad_status', 'kicad_summary', 'kicad_query', 'kicad_run', 'kicad_preview'].every((tool) => tools.has(tool)), [...tools.keys()].join(', '))
+check('preset half registers the kicad tools', ['kicad_status', 'kicad_summary', 'kicad_query', 'kicad_run'].every((tool) => tools.has(tool)), [...tools.keys()].join(', '))
 
 /* ---------- report ---------- */
 

@@ -1,17 +1,12 @@
 /**
  * dsh-kicad-tool — browser half.
  *
- * Two jobs:
- *
- * 1. **Auto-open.** The Host produces preview URLs; only the Client can open a Sidebar tab. One
- *    Server-Sent-Events stream to `/plugin/kicad-tool/events` delivers them, and each is opened in
- *    the in-app browser.
- * 2. **Bundle settings.** A `plugins.bundle.config` entry (keyed by the bundle package name) that
- *    edits the install path and version and drives install / update / reinstall / remove for the
- *    managed kicad-tools venv. It renders on the bundle's own page under Plugins → dsh-kicad-tool.
- *    The backend is this plugin's own routes (`/plugin/kicad-tool/state|config|action|purge`); the
- *    Settings wire only serves a hard-coded namespace allowlist. The kicad_* tools themselves are
- *    mounted by the「KiCad 助手」agent preset.
+ * **Bundle settings.** A `plugins.bundle.config` entry (keyed by the bundle package name) that
+ * edits the install path and version and drives install / update / reinstall / remove for the
+ * managed kicad-tools venv. It renders on the bundle's own page under Plugins → dsh-kicad-tool.
+ * The backend is this plugin's own routes (`/plugin/kicad-tool/state|config|action|purge`); the
+ * Settings wire only serves a hard-coded namespace allowlist. The kicad_* tools themselves are
+ * mounted by the「KiCad 助手」agent preset.
  *
  * Bundle shape: `window.__ModuleLoader__.load({ id, factory })` with a lazy CJS factory whose
  * `require` resolves against the shell's frozen module table.
@@ -25,37 +20,10 @@ window.__ModuleLoader__.load({
     var React = require('react')
 
     /** Host routes. */
-    var EVENTS_PATH = '/plugin/kicad-tool/events'
     var STATE_PATH = '/plugin/kicad-tool/state'
     var CONFIG_PATH = '/plugin/kicad-tool/config'
     var ACTION_PATH = '/plugin/kicad-tool/action'
     var PURGE_PATH = '/plugin/kicad-tool/purge'
-
-    /**
-     * Open one preview URL in the Sidebar's browser tab.
-     * @param ctx - client plugin context.
-     * @param url - loopback preview URL produced by the Host tool.
-     */
-    function openPreview(ctx, url) {
-      var sidebar = typeof ctx.get === 'function' ? ctx.get('sidebarRight') : undefined
-      if (sidebar === undefined) return false
-      try {
-        if (typeof sidebar.openTab === 'function') {
-          sidebar.openTab('browser', { params: { url: url } })
-          return true
-        }
-        if (typeof sidebar.openTabFromTarget === 'function' && typeof sidebar.commandTarget === 'function') {
-          var target = sidebar.commandTarget(document.activeElement ?? document.body)
-          if (target !== undefined) {
-            sidebar.openTabFromTarget('browser', target)
-            return true
-          }
-        }
-      } catch (error) {
-        console.warn('[kicad-tool] could not open preview', error)
-      }
-      return false
-    }
 
     /* ---------------- bundle settings page ---------------- */
 
@@ -238,7 +206,7 @@ window.__ModuleLoader__.load({
           'div',
           { style: cardStyle },
           React.createElement('div', { style: titleStyle }, '安装路径'),
-          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。本页在「插件 → dsh-kicad-tool」详情页；kicad_* 工具在新建会话选择「KiCad 助手」模式后可用；KiCanvas 已内置在插件里，不需要配置路径。'),
+          React.createElement('div', { style: subStyle }, '改动会立即生效，无需重启。本页在「插件 → dsh-kicad-tool」详情页；kicad_* 工具在新建会话选择「KiCad 助手」模式后可用。'),
           React.createElement(
             'div',
             { style: rowStyle },
@@ -276,7 +244,7 @@ window.__ModuleLoader__.load({
             React.createElement(
               'span',
               { style: { fontSize: '11px', color: 'var(--dsw-alias-label-secondary, #999)' } },
-              '依赖：uv ' + (deps.uv ? '✓' : '✗') + ' · 从 PyPI 安装 · KiCanvas 内置',
+              '依赖：uv ' + (deps.uv ? '✓' : '✗') + ' · 从 PyPI 安装',
             ),
           ),
         ),
@@ -330,30 +298,8 @@ window.__ModuleLoader__.load({
 
     /* ---------------- plugin entry ---------------- */
 
-    /** Subscribe to Host preview pushes and register the bundle's settings entry. */
+    /** Register the bundle's settings entry. */
     function apply(ctx) {
-      var disposers = []
-
-      if (typeof EventSource !== 'undefined') {
-        var disposed = false
-        var source = new EventSource(EVENTS_PATH)
-        source.onmessage = function (event) {
-          if (disposed) return
-          var payload
-          try {
-            payload = JSON.parse(event.data)
-          } catch (error) {
-            return
-          }
-          if (payload && typeof payload.url === 'string') openPreview(ctx, payload.url)
-        }
-        source.onerror = function () {}
-        disposers.push(function () {
-          disposed = true
-          source.close()
-        })
-      }
-
       if (ctx.slots && typeof ctx.slots.inject === 'function') {
         // Bundle-owned configuration lives on the bundle's own page (Plugins → dsh-kicad-tool),
         // between its description and its rows — not in the global Settings list. `view: 'page'`
@@ -370,16 +316,12 @@ window.__ModuleLoader__.load({
           )
         })
       }
-
-      return function () {
-        for (var index = 0; index < disposers.length; index += 1) disposers[index]()
-      }
     }
 
     exports.name = 'dsh-kicad-tool'
     exports.inject = ['slots']
     exports.apply = apply
-    exports.internals = { openPreview: openPreview, KicadToolSection: KicadToolSection, EVENTS_PATH: EVENTS_PATH }
+    exports.internals = { KicadToolSection: KicadToolSection }
 
     return module.exports
   },

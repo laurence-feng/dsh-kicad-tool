@@ -86,7 +86,7 @@ check(
   initial.json.config.kicadToolsDir.endsWith('/.local/share/dsh-kicad-tool/kicad-tools'),
   initial.json.config.kicadToolsDir,
 )
-check('only kicad-tools is managed (KiCanvas is vendored)', Object.keys(initial.json.repos).join(',') === 'kicad-tools', Object.keys(initial.json.repos).join(','))
+check('only kicad-tools is managed', Object.keys(initial.json.repos).join(',') === 'kicad-tools', Object.keys(initial.json.repos).join(','))
 check('missing uv is reported', initial.json.dependencies.uv === null, String(initial.json.dependencies.uv))
 check(
   'uninstall command is provided',
@@ -112,7 +112,6 @@ check('a non-version string is rejected', badVersion.status === 400 && /must loo
 
 const versioned = await request('PUT', '/plugin/kicad-tool/config', { kicadToolsVersion: '0.24.0' })
 check('a version can be pinned', versioned.status === 200 && versioned.json.config.kicadToolsVersion === '0.24.0', versioned.text)
-check('no kicanvas path is exposed', !('kicanvasDir' in saved.json.config))
 check('the fresh path is not installed', saved.json.repos['kicad-tools'].installed === false, JSON.stringify(saved.json.repos['kicad-tools']))
 
 const mutating = await request('PUT', '/plugin/kicad-tool/config', { allowMutating: true })
@@ -132,9 +131,6 @@ check(
 
 const updateMissing = await request('POST', '/plugin/kicad-tool/action', { target: 'kicad-tools', action: 'update' })
 check('update requires an install', updateMissing.status === 409 && /not installed/.test(updateMissing.text), updateMissing.text)
-
-const canvasTarget = await request('POST', '/plugin/kicad-tool/action', { target: 'kicanvas', action: 'install' })
-check('kicanvas is no longer a managed target', canvasTarget.status === 409, canvasTarget.text)
 
 /* ---------- purge safety ---------- */
 
@@ -178,7 +174,6 @@ apply(
 )
 check('plugin waits for webServer through ctx.inject', injected)
 check('state route exists once the service arrives', lateRoutes.has('exact:/plugin/kicad-tool/state'), [...lateRoutes.keys()].join(', '))
-check('events route exists once the service arrives', lateRoutes.has('exact:/plugin/kicad-tool/events'))
 
 /* ---------- loopback only ---------- */
 

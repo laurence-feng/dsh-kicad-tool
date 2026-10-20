@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "KiCad 工具",
+    "title": "KiCad 模式",
     "description": "在会话里检查原理图与 PCB、跑 DRC/ERC、生成 BOM，并直接驱动 kct 命令行。"
   }
 }

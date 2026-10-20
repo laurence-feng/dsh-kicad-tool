@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "KiCad Tools",
+    "title": "KiCad Mode",
     "description": "Inspect schematics and PCBs, run DRC/ERC, generate BOMs and drive the kct CLI from a session."
   }
 }
